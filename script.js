@@ -1,10 +1,27 @@
 const EXCEL_TEMPLATE_PATH = 'https://eovendcoffee.github.io/invent/templates/invent.xlsx';
 const DEBUG_MODE = false; // Поставьте true, если нужно включить логирование
 
+const ROUTE_TO_CAR_MAPPING = {
+    "1": "У840УЕ33",
+    "2": "У179УК33",
+    "3": "У493УК33",
+    "4": "Т372УХ33",
+    "5": "К645ХС33",
+    "6": "М906ХВ33",
+    "7": "М281ХО33",
+    "8": "М332ХТ33"
+};
+
 document.addEventListener('DOMContentLoaded', function() {
     const today = new Date();
     document.getElementById('inventoryDate').value = today.toISOString().split('T')[0];
     loadTemplate();
+
+    document.getElementById('routeNumber').addEventListener('change', function() {
+        const carNumberInput = document.getElementById('carNumber');
+        carNumberInput.value = ROUTE_TO_CAR_MAPPING[this.value];
+    });
+    
     document.getElementById('downloadBtn').addEventListener('click', downloadInventoryWithExcelJS);
 });
 
