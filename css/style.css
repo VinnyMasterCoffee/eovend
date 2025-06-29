@@ -71,25 +71,96 @@ label {
 }
 
 /* Стили таблицы */
+/* Общие стили для таблицы */
 #inventoryTable {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 20px;
+    margin: 15px 0;
+    table-layout: fixed; /* Фиксированная ширина столбцов */
 }
 
-#inventoryTable th, #inventoryTable td {
-    border: 1px solid #ddd;
-    padding: 8px;
+/* Стили для ячеек таблицы */
+#inventoryTable th, 
+#inventoryTable td {
+    padding: 10px;
     text-align: left;
+    border: 1px solid #ddd;
+    word-break: break-word; /* Перенос длинных слов */
 }
 
-#inventoryTable th {
-    background-color: #f2f2f2;
+/* Специальные стили для мобильных устройств */
+@media (max-width: 768px) {
+    #inventoryTable {
+        display: block;
+        overflow-x: auto; /* Горизонтальная прокрутка при необходимости */
+        -webkit-overflow-scrolling: touch; /* Плавная прокрутка на iOS */
+    }
+
+    #inventoryTable thead,
+    #inventoryTable tbody,
+    #inventoryTable th,
+    #inventoryTable td,
+    #inventoryTable tr {
+        display: block;
+    }
+
+    #inventoryTable thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    }
+
+    #inventoryTable tr {
+        margin-bottom: 15px;
+        border: 1px solid #ddd;
+    }
+
+    #inventoryTable td {
+        border: none;
+        border-bottom: 1px solid #eee;
+        position: relative;
+        padding-left: 50%;
+        text-align: right;
+    }
+
+    #inventoryTable td:before {
+        content: attr(data-label);
+        position: absolute;
+        left: 10px;
+        width: 45%;
+        padding-right: 10px;
+        white-space: nowrap;
+        text-align: left;
+        font-weight: bold;
+    }
+
+    /* Для динамического добавления атрибутов data-label */
+    #inventoryTable td:nth-of-type(1):before { content: "Название продукта"; }
+    #inventoryTable td:nth-of-type(2):before { content: "Количество продуктов (шт)"; }
 }
 
-.non-editable {
-    background-color: #f0f0f0;
-    cursor: not-allowed;
+/* Стили для полей ввода в таблице */
+#inventoryTable input[type="number"] {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+/* Дополнительные адаптивные стили */
+@media (max-width: 480px) {
+    .container {
+        padding: 0 10px;
+    }
+    
+    .form-group {
+        margin: 10px 0;
+    }
+    
+    #inventoryTable td {
+        padding-left: 40%;
+    }
 }
 
 /* Стили кнопки */
