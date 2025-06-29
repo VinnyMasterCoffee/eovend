@@ -53,7 +53,9 @@ async function loadTemplate() {
             const row = jsonData[i];
             if (!row[0] || isNaN(row[0])) continue;
             
-            const isEditable = !NON_EDITABLE_ITEMS.includes(row[2]);
+            // Пропускаем нередактируемые товары
+            if (NON_EDITABLE_ITEMS.includes(row[2])) continue;
+            
             const simplifiedName = SIMPLIFIED_NAMES[row[2]] || row[2];
             
             const tr = document.createElement('tr');
@@ -70,12 +72,6 @@ async function loadTemplate() {
             input.min = '0';
             input.dataset.rowIndex = i - headerRow - 1;
             input.dataset.originalName = row[2]; // Сохраняем оригинальное название
-            
-            if (!isEditable) {
-                input.readOnly = true;
-                input.placeholder = 'Не редактируется';
-                input.classList.add('non-editable');
-            }
             
             tdInput.appendChild(input);
             tr.appendChild(tdInput);
