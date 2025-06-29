@@ -16,10 +16,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const today = new Date();
     document.getElementById('inventoryDate').value = today.toISOString().split('T')[0];
     loadTemplate();
-
-    document.getElementById('routeNumber').addEventListener('change', function() {
-        const carNumberInput = document.getElementById('carNumber');
-        carNumberInput.value = ROUTE_TO_CAR_MAPPING[this.value];
+    
+    const routeSelect = document.getElementById('routeNumber');
+    const carNumberInput = document.getElementById('carNumber');
+    
+    // Автозаполнение номера машины при выборе маршрута
+    routeSelect.addEventListener('change', function() {
+        carNumberInput.value = ROUTE_TO_CAR_MAPPING[this.value] || '';
     });
     
     document.getElementById('downloadBtn').addEventListener('click', downloadInventoryWithExcelJS);
@@ -115,8 +118,14 @@ async function downloadInventoryWithExcelJS() {
     const routeNumber = document.getElementById('routeNumber').value;
     const carNumber = document.getElementById('carNumber').value;
     
-    if (!dateInput.value || !routeNumber || !carNumber) {
-        alert('Пожалуйста, заполните все обязательные поля');
+    if (!dateInput.value || !routeSelect.value) {
+        alert('Пожалуйста, выберите дату и маршрут');
+        return;
+    }
+
+    // Проверяем, что номер машины заполнился автоматически
+    if (!carNumberInput.value) {
+        alert('Ошибка: не удалось определить номер машины для выбранного маршрута');
         return;
     }
     
