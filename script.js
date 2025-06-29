@@ -67,8 +67,6 @@ async function loadTemplate() {
 
             // Получаем упрощённое название
             const simplifiedName = SIMPLIFIED_NAMES[originalName] || originalName;
-            console.log("Original name from Excel:", originalName);
-            console.log("Simplified name:", simplifiedName);
             const tr = document.createElement('tr');
             
             const nameTd = document.createElement('td');
@@ -139,7 +137,7 @@ async function downloadInventoryWithExcelJS() {
             const inputs = document.querySelectorAll('#inventoryItems input');
             inputs.forEach((input) => {
                 const originalName = input.dataset.originalName;
-                const excelRow = excelRows.find(row => row.name === originalName);
+                const excelRow = excelRows.find(row => normalizeString(row.name) === originalName);
                 
                 if (excelRow) {
                     const row = excelRow.rowNumber;
@@ -176,6 +174,10 @@ async function downloadInventoryWithExcelJS() {
         console.error('Ошибка при создании файла:', error);
         alert('Произошла ошибка при создании файла. Пожалуйста, попробуйте позже.');
     }
+    console.log("Searching for:", originalName);
+excelRows.forEach(row => {
+    console.log("Excel row name:", row.name, "Normalized:", normalizeString(row.name));
+});
 }
 
 function findDateCell(worksheet) {
