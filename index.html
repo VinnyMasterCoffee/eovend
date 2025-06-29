@@ -37,14 +37,23 @@
         </div>
         
         <div class="form-group">
-            <label for="routeNumber">Номер маршрута (1-8):</label>
-            <input type="number" id="routeNumber" class="input" min="1" max="8" required>
+            <label for="routeNumber">Номер маршрута:</label>
+            <select id="routeNumber" class="input" required>
+                <option value="" disabled selected>Выберите маршрут</option>
+                <option value="1">Маршрут 1 (У840УЕ33)</option>
+                <option value="2">Маршрут 2 (У179УК33)</option>
+                <option value="3">Маршрут 3 (У493УК33)</option>
+                <option value="4">Маршрут 4 (Т372УХ33)</option>
+                <option value="5">Маршрут 5 (К645ХС33)</option>
+                <option value="6">Маршрут 6 (М906ХВ33)</option>
+                <option value="7">Маршрут 7 (М281ХО33)</option>
+                <option value="8">Маршрут 8 (М332ХТ33)</option>
+            </select>
         </div>
-        
-        <div class="form-group">
-            <label for="carNumber">Номер машины:</label>
-            <input type="text" id="carNumber" class="input" placeholder="А123БВ33" required>
-        </div>
+
+<div class="form-group" style="display: none;">
+    <input type="text" id="carNumber" class="input">
+</div>
         
         <div class="form-group">
             <h3>Остатки продуктов в машине:</h3>
