@@ -133,12 +133,15 @@ async function downloadInventoryWithExcelJS() {
                 });
                 rowIndex++;
             }
-            
             const inputs = document.querySelectorAll('#inventoryItems input');
             inputs.forEach((input) => {
                 const originalName = input.dataset.originalName;
-                const excelRow = excelRows.find(row => normalizeString(row.name) === originalName);
-                
+                console.log("Searching for:", originalName);
+                excelRows.forEach(row => {
+                    console.log("Excel row name:", row.name, "Normalized:", normalizeString(row.name));
+                });
+        
+            const excelRow = excelRows.find(row => normalizeString(row.name) === originalName);
                 if (excelRow) {
                     const row = excelRow.rowNumber;
                     
@@ -174,10 +177,6 @@ async function downloadInventoryWithExcelJS() {
         console.error('Ошибка при создании файла:', error);
         alert('Произошла ошибка при создании файла. Пожалуйста, попробуйте позже.');
     }
-    console.log("Searching for:", originalName);
-excelRows.forEach(row => {
-    console.log("Excel row name:", row.name, "Normalized:", normalizeString(row.name));
-});
 }
 
 function formatDate(date) {
