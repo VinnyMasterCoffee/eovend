@@ -27,6 +27,11 @@ const SIMPLIFIED_NAMES = {
     "Смесь сухая ARISTOCRAT Цитрус 1кг": "Цитрус"
 };
 
+// Функция для нормализации строк (удаление лишних пробелов)
+function normalizeString(str) {
+    return str.trim().replace(/\s+/g, ' ');
+}
+
 async function loadTemplate() {
     try {
         const response = await fetch('/eovend/templates/invent.xlsx');
@@ -52,28 +57,29 @@ async function loadTemplate() {
         for (let i = headerRow + 1; i < jsonData.length; i++) {
             const row = jsonData[i];
             if (!row[0] || isNaN(row[0])) continue;
-            
+
             // Пропускаем нередактируемые товары
-            if (NON_EDITABLE_ITEMS.includes(row[2])) continue;
-            
-            // Получаем упрощенное название (если есть) или оставляем оригинальное
-            const simplifiedName = SIMPLIFIED_NAMES[row[2]] || row[2];
-            
+            const originalName = normalizeString(row[2]);
+            if (NON_EDITABLE_ITEMS.some(item => normalizeString(item) === originalName)) continue;
+
+            // Получаем упрощённое название
+            const simplifiedName = SIMPLIFIED_NAMES[originalName] || originalName;
+
             const tr = document.createElement('tr');
             
-            // Название товара (упрощенное)
+            // Название товара (упрощённое)
             const nameTd = document.createElement('td');
-            nameTd.textContent = simplifiedName; // Используем УПРОЩЕННОЕ название здесь
+            nameTd.textContent = simplifiedName;
             tr.appendChild(nameTd);
-            
+
             // Поле ввода
             const tdInput = document.createElement('td');
             const input = document.createElement('input');
             input.type = 'number';
             input.min = '0';
             input.dataset.rowIndex = i - headerRow - 1;
-            input.dataset.originalName = row[2]; // Сохраняем оригинальное название для Excel
-            
+            input.dataset.originalName = originalName; // Сохраняем оригинальное название
+
             tdInput.appendChild(input);
             tr.appendChild(tdInput);
             
