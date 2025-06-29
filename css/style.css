@@ -165,3 +165,16 @@ select.input.error {
     border: 1px solid #ff4d4d;
     box-shadow: 0 0 0 2px rgba(255, 77, 77, 0.2);
 }
+/* Улучшение для полей ввода на мобильных устройствах */
+@media (max-width: 768px) {
+    #inventoryTable input[type="number"] {
+        font-size: 16px; /* Увеличиваем размер шрифта для мобильных */
+        padding: 10px;
+        min-height: 40px; /* Делаем поле больше для удобства касания */
+    }
+    
+    /* Дополнительный отступ снизу при открытой клавиатуре */
+    body.keyboard-visible {
+        padding-bottom: 300px;
+    }
+}
