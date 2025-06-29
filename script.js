@@ -187,3 +187,4 @@ function findDateCell(worksheet) {
     }
     return null;
 }
+console.log("Original name:", originalName, "Simplified:", SIMPLIFIED_NAMES[originalName]);
