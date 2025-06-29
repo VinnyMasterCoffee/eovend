@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Редактор инвентаризации кофе</title>
+    <!-- Загружаем xlsx.js через CDN с проверкой -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.19.3/dist/xlsx.full.min.js"></script>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
@@ -14,14 +15,14 @@
         .loading { background: #fff3cd; color: #856404; }
         .success { background: #d4edda; color: #155724; }
         .error { background: #f8d7da; color: #721c24; }
-        .error-input { border-color: #f8d7da !important; }
     </style>
 </head>
 <body>
     <h2>Редактор инвентаризации кофе</h2>
     
-    <div id="status" class="loading">Загрузка шаблона...</div>
+    <div id="status" class="loading">Загрузка библиотеки...</div>
 
+    <!-- Форма остается без изменений -->
     <div class="form-group">
         <label>Дата инвентаризации:</label>
         <input type="date" id="inventoryDate" required>
@@ -29,9 +30,9 @@
     
     <div class="form-group">
         <label>Номер маршрута (К):</label>
-        <input type="text" id="routeNumber" required placeholder="Например: 123">
+        <input type="text" id="routeNumber" required>
         <label style="margin-left: 20px;">Номер машины:</label>
-        <input type="text" id="carNumber" required placeholder="Например: А123БВ">
+        <input type="text" id="carNumber" required>
     </div>
 
     <h3>Фактические остатки:</h3>
@@ -40,6 +41,18 @@
     <button id="downloadBtn" disabled>Скачать обновлённый файл</button>
 
     <script>
+        // Ждем загрузки библиотеки XLSX
+        function waitForXLSX(callback) {
+            if (window.XLSX) {
+                callback();
+            } else {
+                setTimeout(() => waitForXLSX(callback), 100);
+            }
+        }
+
+        // Основной код запускается только после загрузки XLSX
+        waitForXLSX(function() {
+            document.getElementById('status').textContent = "Библиотека загружена. Загрузка шаблона...";
         // Конфигурация
         const TEMPLATE_PATH = '/eovend/templates/invent.xlsx'; // Исправленный путь к шаблону
         const monthNames = {
