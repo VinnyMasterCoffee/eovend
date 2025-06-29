@@ -2,21 +2,69 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Редактор инвентаризации</title>
+    <title>Редактор инвентаризации кофе</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
-    <link rel="stylesheet" href="style.css">
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .form-group { margin-bottom: 15px; }
-        label { display: inline-block; width: 180px; font-weight: bold; }
-        input { padding: 5px; border: 1px solid #000; }
-        button { padding: 8px 20px; background: #4CAF50; color: white; border: none; cursor: pointer; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            font-size: 11pt;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: inline-block;
+            width: 180px;
+            font-weight: bold;
+        }
+        input, select {
+            padding: 5px;
+            font-size: 11pt;
+            border: 1px solid #000;
+        }
+        button {
+            padding: 8px 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 11pt;
+            margin-top: 15px;
+        }
+        .quantity-input {
+            width: 50px;
+            padding: 3px;
+            text-align: center;
+            border: 1px solid #000;
+        }
+        .required-field {
+            border: 1px solid red;
+        }
+        #fileInfo {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 4px;
+        }
+        #inventoryInputs {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
     <h2>Редактор инвентаризации кофе</h2>
 
-    <!-- Поля для ввода данных -->
+    <div class="form-group">
+        <label>Загрузите шаблон Excel:</label>
+        <input type="file" id="excelFile" accept=".xlsx,.xls">
+    </div>
+    <div id="fileInfo"></div>
+
     <div class="form-group">
         <label>Дата инвентаризации:</label>
         <input type="date" id="inventoryDate" required>
@@ -24,23 +72,19 @@
     
     <div class="form-group">
         <label>Номер маршрута (К):</label>
-        <input type="text" id="routeNumber" required>
+        <input type="text" id="routeNumber" style="width: 40px;" required>
         
         <label style="width: 120px; margin-left: 20px;">Номер машины:</label>
-        <input type="text" id="carNumber" required>
+        <input type="text" id="carNumber" style="width: 100px;" required>
     </div>
 
-    <!-- Загрузка шаблона -->
-    <div class="form-group">
-        <label>Загрузите шаблон Excel:</label>
-        <input type="file" id="excelTemplate" accept=".xlsx,.xls">
-    </div>
+    <h3>Введите фактические остатки:</h3>
+    <div id="inventoryInputs"></div>
 
-    <!-- Кнопка генерации -->
-    <button onclick="generateReport()">Скачать отчёт</button>
+    <button onclick="generateReport()">Скачать обновлённый файл</button>
 
     <script>
-        // Названия месяцев для даты
+        let workbookTemplate = null;
         const monthNames = {
             nom: ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", 
                   "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"],
@@ -48,24 +92,96 @@
                   "июля", "августа", "сентября", "октября", "ноября", "декабря"]
         };
 
-        // Основная функция
+        // Товары из шаблона (соответствуют строкам 6-21)
+        const inventoryItems = [
+            { id: 1, name: "Вода Нила Спрингс 19л", editable: true },
+            { id: 2, name: "Горячий шоколад ARISTOCRAT ШВЕЙЦАРСКИЙ гранулы 500г", editable: true },
+            { id: 3, name: "Капучино ARISTOCRAT Mokka Toffee 1000г", editable: true },
+            { id: 4, name: "Капучино TORINO Irish Cream 1кг", editable: true },
+            { id: 5, name: "Кофе Poetti Espresso Bravo 1кг зерно", editable: false }, // E10
+            { id: 6, name: "Кофе Жардин Пьяцца Арабика 1кг зерно", editable: true },
+            { id: 7, name: "Крышка пластиковая 80мм без клапана Global Cups", editable: true },
+            { id: 8, name: "Палочки размешиватели GlobalCups 105 мм", editable: false }, // E13
+            { id: 9, name: "Сладкий сахар в пакетах 1кг", editable: true },
+            { id: 10, name: "Стакан бумажный GlobalCups D70 150мл 100шт/уп", editable: true },
+            { id: 11, name: "Стакан бумажный Формация WAKE ME CUP D80 300мл 50шт/уп", editable: false }, // E16
+            { id: 12, name: "Сухое молоко гранул. \"AlpenMilch Плюс\" 1000г", editable: true },
+            { id: 13, name: "Сухое молоко МАЛИНА 1000г", editable: true },
+            { id: 14, name: "Смесь сухая ARISTOCRAT Цитрус 1кг", editable: true },
+            { id: 15, name: "Кофе Live Coffee (Санта Ричи) зерно", editable: false }, // E20
+            { id: 16, name: "Смесь сухая ARISTOCRAT Клубника 1кг", editable: false } // E21
+        ];
+
+        // Загрузка шаблона Excel
+        document.getElementById('excelFile').addEventListener('change', async function(e) {
+            try {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const data = await file.arrayBuffer();
+                workbookTemplate = XLSX.read(data);
+                
+                // Проверяем структуру файла
+                if (!validateTemplate(workbookTemplate)) {
+                    alert("Загружен некорректный шаблон! Проверьте структуру файла.");
+                    return;
+                }
+                
+                document.getElementById('fileInfo').innerHTML = `
+                    <strong>Загружен файл:</strong> ${file.name}<br>
+                    <strong>Листы:</strong> ${workbookTemplate.SheetNames.join(', ')}
+                `;
+                
+                // Создаём поля для ввода остатков
+                renderInputFields();
+                
+            } catch (error) {
+                alert(`Ошибка при загрузке файла: ${error.message}`);
+            }
+        });
+
+        // Проверка структуры шаблона
+        function validateTemplate(wb) {
+            if (!wb.SheetNames.includes('ведомость д-бух') || 
+                !wb.SheetNames.includes('Для печати')) {
+                return false;
+            }
+            return true;
+        }
+
+        // Генерация полей ввода
+        function renderInputFields() {
+            const container = document.getElementById("inventoryInputs");
+            container.innerHTML = '';
+            
+            inventoryItems.forEach(item => {
+                if (!item.editable) return;
+                
+                const div = document.createElement("div");
+                div.className = "form-group";
+                div.innerHTML = `
+                    <label>${item.name}:</label>
+                    <input type="number" id="item_${item.id}" min="0" class="quantity-input">
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // Основная функция генерации отчёта
         async function generateReport() {
-            const fileInput = document.getElementById('excelTemplate');
-            if (!fileInput.files.length) {
-                alert('Сначала загрузите шаблон Excel!');
+            if (!workbookTemplate) {
+                alert("Сначала загрузите шаблон Excel!");
                 return;
             }
 
             try {
-                // 1. Читаем загруженный файл
-                const file = fileInput.files[0];
-                const data = await file.arrayBuffer();
-                const workbook = XLSX.read(data);
+                // Проверяем обязательные поля
+                if (!validateForm()) return;
 
-                // 2. Обновляем данные
-                updateWorkbook(workbook);
+                // Обновляем данные в шаблоне
+                updateWorkbookData();
 
-                // 3. Генерируем имя файла
+                // Генерируем имя файла
                 const date = new Date(document.getElementById('inventoryDate').value);
                 const month = monthNames.nom[date.getMonth()];
                 const year = date.getFullYear();
@@ -74,8 +190,8 @@
                 
                 const fileName = `Инвентаризация ${month} ${year} Кофе К${route} ${car}.xlsx`;
 
-                // 4. Скачиваем
-                XLSX.writeFile(workbook, fileName);
+                // Скачиваем файл
+                XLSX.writeFile(workbookTemplate, fileName);
                 
             } catch (error) {
                 alert(`Ошибка: ${error.message}`);
@@ -83,7 +199,7 @@
         }
 
         // Обновление данных в шаблоне
-        function updateWorkbook(workbook) {
+        function updateWorkbookData() {
             const date = new Date(document.getElementById('inventoryDate').value);
             const day = date.getDate();
             const month = monthNames.dat[date.getMonth()];
@@ -91,17 +207,63 @@
             const route = document.getElementById('routeNumber').value;
             const car = document.getElementById('carNumber').value;
 
-            // Обновляем каждый лист
-            workbook.SheetNames.forEach(sheetName => {
-                const ws = workbook.Sheets[sheetName];
+            // Обновляем оба листа
+            ['ведомость д-бух', 'Для печати'].forEach(sheetName => {
+                const ws = workbookTemplate.Sheets[sheetName];
                 
-                // 1. Дату (строка 3)
-                ws['A3'].v = `"___${day}___" ${month} ${year} г.`;
+                // 1. Обновляем дату (строка 3)
+                if (ws['A3']) {
+                    ws['A3'].v = `"___${day}___" ${month} ${year} г.`;
+                    ws['A3'].t = 's';
+                }
                 
-                // 2. Номер машины (B22/C22)
-                ws['B22'].v = `К${route}`;
-                ws['C22'].v = car;
+                // 2. Обновляем остатки (E6-E21, кроме исключений)
+                inventoryItems.forEach(item => {
+                    if (!item.editable) return;
+                    
+                    const row = 5 + item.id; // E6-E21
+                    const cellE = XLSX.utils.encode_cell({c: 4, r: row});
+                    const value = document.getElementById(`item_${item.id}`).value;
+                    
+                    if (value !== "") {
+                        ws[cellE] = { t: 'n', v: Number(value) };
+                    }
+                });
+                
+                // 3. Обновляем номер машины (B22/C22)
+                if (ws['B22']) {
+                    ws['B22'].v = `К${route}`;
+                    ws['B22'].t = 's';
+                }
+                if (ws['C22']) {
+                    ws['C22'].v = car;
+                    ws['C22'].t = 's';
+                }
             });
+        }
+
+        // Проверка формы
+        function validateForm() {
+            let isValid = true;
+            const requiredFields = [
+                'inventoryDate', 'routeNumber', 'carNumber'
+            ];
+
+            requiredFields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (!field.value) {
+                    field.classList.add('required-field');
+                    isValid = false;
+                } else {
+                    field.classList.remove('required-field');
+                }
+            });
+
+            if (!isValid) {
+                alert("Пожалуйста, заполните все обязательные поля (они выделены красной рамкой)");
+            }
+
+            return isValid;
         }
 
         // Устанавливаем текущую дату по умолчанию
