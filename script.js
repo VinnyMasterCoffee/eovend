@@ -112,7 +112,7 @@ async function downloadInventoryWithExcelJS() {
         for (let sheetIndex = 0; sheetIndex < workbook.worksheets.length; sheetIndex++) {
             const worksheet = workbook.worksheets[sheetIndex];
             
-            const dateCell = findDateCell(worksheet);
+            const dateCell = findDateCell(worksheet, dateInput.value);
             if (dateCell) {
                 const date = new Date(dateInput.value);
                 const monthNames = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 
@@ -180,16 +180,34 @@ excelRows.forEach(row => {
 });
 }
 
-function findDateCell(worksheet) {
+function formatDate(date) {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}.${month}.${year}`;
+}
+
+function findDateCell(worksheet, dateInput) {
+    const date = new Date(dateInput);
+    const monthNames = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 
+                      'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+
     for (let row = 1; row <= 10; row++) {
         for (let col = 1; col <= 7; col++) {
             const cell = worksheet.getCell(row, col);
-            if (cell.text && cell.text.includes('мая 2025 г.')) {
-                return cell;
+            if (!cell.text) continue;
+
+            // Замена для "мая 2025 г." (старый формат)
+            if (cell.text.includes('мая 2025 г.')) {
+                cell.value = `"___${date.getDate()}___" ${monthNames[date.getMonth()]} ${date.getFullYear()} г.`;
+            }
+
+            // Замена для "1с, 31.05.2025" (новый формат)
+            if (cell.text.trim().startsWith('1с,') && cell.text.includes('.')) {
+                cell.value = `1с, ${formatDate(date)}`;
             }
         }
     }
-    return null;
 }
 
 
