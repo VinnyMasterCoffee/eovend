@@ -1,5 +1,5 @@
 const EXCEL_TEMPLATE_PATH = 'https://eovendcoffee.github.io/invent/templates/invent.xlsx';
-const DEBUG_MODE = false; // Поставьте true, если нужно включить логирование
+const DEBUG_MODE = true; // Поставьте true, если нужно включить логирование
 
 const ROUTE_TO_CAR_MAPPING = {
     "1": "У840УЕ33",
@@ -70,6 +70,9 @@ function normalizeString(str) {
 }
 
 async function loadTemplate() {
+    if (DEBUG_MODE) {
+        console.log('Загрузка шаблона...', EXCEL_TEMPLATE_PATH);
+    }
     try {
         const response = await fetch(EXCEL_TEMPLATE_PATH);
         const arrayBuffer = await response.arrayBuffer();
@@ -128,6 +131,9 @@ async function loadTemplate() {
 }
 
 async function downloadInventoryWithExcelJS() {
+    if (DEBUG_MODE) {
+        console.log('Начало скачивания...');
+    }
     const dateInput = document.getElementById('inventoryDate');
     const routeSelect = document.getElementById('routeNumber');
     const carNumberInput = document.getElementById('carNumber');
