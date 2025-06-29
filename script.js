@@ -56,13 +56,14 @@ async function loadTemplate() {
             // Пропускаем нередактируемые товары
             if (NON_EDITABLE_ITEMS.includes(row[2])) continue;
             
+            // Получаем упрощенное название (если есть) или оставляем оригинальное
             const simplifiedName = SIMPLIFIED_NAMES[row[2]] || row[2];
             
             const tr = document.createElement('tr');
             
             // Название товара (упрощенное)
             const nameTd = document.createElement('td');
-            nameTd.textContent = simplifiedName;
+            nameTd.textContent = simplifiedName; // Используем УПРОЩЕННОЕ название здесь
             tr.appendChild(nameTd);
             
             // Поле ввода
@@ -71,7 +72,7 @@ async function loadTemplate() {
             input.type = 'number';
             input.min = '0';
             input.dataset.rowIndex = i - headerRow - 1;
-            input.dataset.originalName = row[2]; // Сохраняем оригинальное название
+            input.dataset.originalName = row[2]; // Сохраняем оригинальное название для Excel
             
             tdInput.appendChild(input);
             tr.appendChild(tdInput);
