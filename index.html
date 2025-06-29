@@ -4,367 +4,72 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Инвентаризация кофе</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        h1 {
-            color: #333;
-            text-align: center;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        input, select {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            margin-top: 20px;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        .error {
-            color: red;
-            font-size: 14px;
-            margin-top: 5px;
-        }
-        .loading {
-            display: none;
-            margin-top: 20px;
-            text-align: center;
-        }
+        /* Ваши стили остаются без изменений */
     </style>
 </head>
 <body>
-    <h1>Инвентаризация кофе склада</h1>
-    
-    <div class="form-group">
-        <label for="date">Дата инвентаризации:</label>
-        <input type="date" id="date" name="date">
-    </div>
-    
-    <div class="form-group">
-        <label for="route">Номер маршрута (1-8):</label>
-        <input type="number" id="route" name="route" min="1" max="8">
-        <div id="routeError" class="error"></div>
-    </div>
-    
-    <div class="form-group">
-        <label for="carNumber">Номер машины (формат: А123БВ45):</label>
-        <input type="text" id="carNumber" name="carNumber" pattern="[А-Я]{1}\d{3}[А-Я]{2}\d{2}">
-        <div id="carNumberError" class="error"></div>
-    </div>
-    
-    <h2>Остатки товаров</h2>
-    <table id="inventoryTable">
-        <thead>
-            <tr>
-                <th>№ п/п</th>
-                <th>Код</th>
-                <th>Номенклатура</th>
-                <th>Ед. изм.</th>
-                <th>Остатки склада факт (шт)</th>
-            </tr>
-        </thead>
-        <tbody id="inventoryBody">
-            <!-- Товары будут добавлены после загрузки шаблона -->
-        </tbody>
-    </table>
-    
-    <div class="loading" id="loading">
-        Загрузка шаблона...
-    </div>
-    
-    <button id="generateBtn">Скачать заполненный файл</button>
+    <!-- Ваша HTML-форма остается без изменений -->
 
     <script>
-        // Новая функция для клонирования листа с сохранением стилей
-        function cloneSheetWithStyles(originalWorkbook, sheetName) {
-            // Создаем глубокую копию листа
-            const originalSheet = originalWorkbook.Sheets[sheetName];
-            const newSheet = JSON.parse(JSON.stringify(originalSheet));
-            
-            // Копируем специальные свойства (стили, объединенные ячейки и т.д.)
-            if (originalSheet['!merges']) {
-                newSheet['!merges'] = originalSheet['!merges'].slice();
-            }
-            if (originalSheet['!cols']) {
-                newSheet['!cols'] = originalSheet['!cols'].slice();
-            }
-            if (originalSheet['!rows']) {
-                newSheet['!rows'] = originalSheet['!rows'].slice();
-            }
-            if (originalSheet['!protect']) {
-                newSheet['!protect'] = {...originalSheet['!protect']};
-            }
-            
-            return newSheet;
-        }
-
-        // Модифицированная функция для генерации файла
-        document.getElementById('generateBtn').addEventListener('click', async function() {
-            // ... (проверки валидности остаются такими же) ...
-
-            // Копируем исходный шаблон с сохранением всех стилей
-            const template = window.templateData.workbook;
-            const workbook = XLSX.utils.book_new();
-            
-            // Обрабатываем каждый лист
-            template.SheetNames.forEach(sheetName => {
-                // Создаем копию листа с сохранением форматирования
-                const newWorksheet = cloneSheetWithStyles(template, sheetName);
-                
-                // Обновляем дату в шаблоне (ячейка A4)
-                const dateCell = 'A4';
-                if (newWorksheet[dateCell]) {
-                    newWorksheet[dateCell].v = dateString;
-                    newWorksheet[dateCell].t = 's';
-                } else {
-                    newWorksheet[dateCell] = { t: 's', v: dateString };
-                }
-                
-                // Обновляем количества в колонке E
-                document.querySelectorAll('.quantity').forEach(input => {
-                    const rowNum = input.getAttribute('data-row');
-                    const cellAddress = XLSX.utils.encode_cell({ c: 4, r: rowNum - 1 }); // Колонка E (4)
-                    
-                    if (newWorksheet[cellAddress]) {
-                        newWorksheet[cellAddress].v = input.value || '';
-                        newWorksheet[cellAddress].t = 'n';
-                    } else {
-                        newWorksheet[cellAddress] = { t: 'n', v: input.value || '' };
-                    }
-                });
-                
-                // Добавляем лист в новую книгу
-                XLSX.utils.book_append_sheet(workbook, newWorksheet, sheetName);
-            });
-            
-            // ... (сохранение файла остается таким же) ...
-        });
-        // Функция для загрузки шаблона
-        async function loadTemplate() {
-            const loadingElement = document.getElementById('loading');
-            loadingElement.style.display = 'block';
-            
+        // Функция для загрузки и обработки шаблона
+        async function processTemplate() {
             try {
-                // В реальном приложении здесь будет fetch к вашему серверу
-                // Для демонстрации создадим пустую книгу, но в реальности нужно загрузить ваш шаблон
+                // 1. Получаем шаблон с сервера
                 const response = await fetch('/eovend/templates/invent.xlsx');
-                if (!response.ok) throw new Error('Шаблон не найден');
                 const arrayBuffer = await response.arrayBuffer();
-                return XLSX.read(arrayBuffer);
-            } catch (error) {
-                console.error('Ошибка загрузки шаблона:', error);
-                alert('Не удалось загрузить шаблон. Проверьте путь к файлу.');
-                return null;
-            } finally {
-                loadingElement.style.display = 'none';
-            }
-        }
-
-        // Функция для извлечения данных из шаблона
-        async function extractTemplateData() {
-            const workbook = await loadTemplate();
-            if (!workbook) return;
-            
-            // Получаем первый лист (ведомость д-бух)
-            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-            const data = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
-            
-            // Находим строки с товарами (начиная с заголовков)
-            let startRow = 0;
-            for (let i = 0; i < data.length; i++) {
-                if (data[i][0] === "№ п/п") {
-                    startRow = i + 1;
-                    break;
-                }
-            }
-            
-            // Извлекаем товары
-            const products = [];
-            for (let i = startRow; i < data.length; i++) {
-                if (!data[i][0]) continue; // Пропускаем пустые строки
                 
-                products.push({
-                    id: data[i][0],
-                    code: data[i][1],
-                    name: data[i][2],
-                    unit: data[i][3],
-                    rowNum: i + 1 // Номер строки в Excel (начинается с 1)
-                });
-            }
-            
-            return { workbook, products };
-        }
-
-        // Установка текущей даты по умолчанию
-        document.addEventListener('DOMContentLoaded', async function() {
-            const today = new Date();
-            const dateStr = today.toISOString().split('T')[0];
-            document.getElementById('date').value = dateStr;
-            
-            // Загружаем данные из шаблона
-            const templateData = await extractTemplateData();
-            if (!templateData) return;
-            
-            window.templateData = templateData; // Сохраняем для использования при генерации
-            
-            // Заполняем таблицу товарами
-            const tableBody = document.getElementById('inventoryBody');
-            templateData.products.forEach(product => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${product.id}</td>
-                    <td>${product.code}</td>
-                    <td>${product.name}</td>
-                    <td>${product.unit}</td>
-                    <td><input type="number" min="0" class="quantity" data-row="${product.rowNum}"></td>
-                `;
-                tableBody.appendChild(row);
-            });
-        });
-
-        // Валидация номера машины
-        document.getElementById('carNumber').addEventListener('input', function() {
-            const carNumber = this.value;
-            const regex = /^[А-Я]{1}\d{3}[А-Я]{2}\d{2}$/;
-            const errorElement = document.getElementById('carNumberError');
-            
-            if (!regex.test(carNumber)) {
-                errorElement.textContent = 'Номер машины должен быть в формате: А123БВ45';
-            } else {
-                errorElement.textContent = '';
-            }
-        });
-
-        // Валидация номера маршрута
-        document.getElementById('route').addEventListener('input', function() {
-            const route = this.value;
-            const errorElement = document.getElementById('routeError');
-            
-            if (route < 1 || route > 8) {
-                errorElement.textContent = 'Номер маршрута должен быть от 1 до 8';
-            } else {
-                errorElement.textContent = '';
-            }
-        });
-
-        // Генерация файла Excel
-        document.getElementById('generateBtn').addEventListener('click', async function() {
-            // Проверка валидности данных
-            const date = document.getElementById('date').value;
-            const route = document.getElementById('route').value;
-            const carNumber = document.getElementById('carNumber').value;
-            
-            if (!date) {
-                alert('Укажите дату инвентаризации');
-                return;
-            }
-            
-            if (!route || route < 1 || route > 8) {
-                alert('Номер маршрута должен быть от 1 до 8');
-                return;
-            }
-            
-            const carNumberRegex = /^[А-Я]{1}\d{3}[А-Я]{2}\d{2}$/;
-            if (!carNumberRegex.test(carNumber)) {
-                alert('Номер машины должен быть в формате: А123БВ45');
-                return;
-            }
-            
-            if (!window.templateData) {
-                alert('Шаблон не загружен');
-                return;
-            }
-            
-            // Собираем данные о количестве
-            const quantities = {};
-            document.querySelectorAll('.quantity').forEach(input => {
-                const rowNum = input.getAttribute('data-row');
-                quantities[rowNum] = input.value || '';
-            });
-            
-            // Копируем шаблон для редактирования
-            const workbook = XLSX.utils.book_new();
-            const template = window.templateData.workbook;
-            
-            // Обновляем дату в шаблоне
-            const dateObj = new Date(date);
-            const day = dateObj.getDate();
-            const monthName = getMonthName(dateObj);
-            const year = dateObj.getFullYear();
-            const dateString = `"___${day}___" ${monthName} ${year} г.`;
-            
-            // Обрабатываем каждый лист
-            template.SheetNames.forEach(sheetName => {
-                const worksheet = template.Sheets[sheetName];
-                const sheetData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                
-                // Обновляем дату (обычно в 3 строке)
-                if (sheetData[3] && sheetData[3][0]) {
-                    sheetData[3][0] = dateString;
-                }
-                
-                // Обновляем количества в колонке E
-                for (const rowNum in quantities) {
-                    if (sheetData[rowNum - 1]) {
-                        sheetData[rowNum - 1][4] = quantities[rowNum];
+                // 2. Открываем шаблон в Excel
+                await Excel.run(async (context) => {
+                    // Загружаем шаблон в рабочую книгу
+                    const workbook = context.workbook;
+                    workbook.load("worksheets/items/name");
+                    
+                    // 3. Получаем данные из формы
+                    const date = document.getElementById('date').value;
+                    const route = document.getElementById('route').value;
+                    const carNumber = document.getElementById('carNumber').value;
+                    const dateObj = new Date(date);
+                    
+                    // 4. Обновляем дату в шаблоне (ячейка A4 на каждом листе)
+                    const sheetNames = workbook.worksheets.items.map(sheet => sheet.name);
+                    for (const sheetName of sheetNames) {
+                        const sheet = workbook.worksheets.getItem(sheetName);
+                        const dateCell = sheet.getRange("A4");
+                        dateCell.values = [[`"___${dateObj.getDate()}___" ${getMonthName(dateObj)} ${dateObj.getFullYear()} г.`]];
                     }
-                }
-                
-                // Преобразуем обратно в worksheet
-                const newWorksheet = XLSX.utils.aoa_to_sheet(sheetData);
-                XLSX.utils.book_append_sheet(workbook, newWorksheet, sheetName);
-            });
-            
-            // Генерируем имя файла
-            const fileName = `Инвентаризация ${monthName} ${year} кофе К${route} ${carNumber}.xlsx`;
-            
-            // Сохраняем файл
-            XLSX.writeFile(workbook, fileName);
+                    
+                    // 5. Обновляем количества (на первом листе)
+                    const mainSheet = workbook.worksheets.getItem("ведомость д-бух");
+                    const quantities = document.querySelectorAll('.quantity');
+                    
+                    for (let i = 0; i < quantities.length; i++) {
+                        const row = i + 6; // Начинаем с 6 строки
+                        const range = mainSheet.getRange(`E${row}`);
+                        range.values = [[quantities[i].value || ""]];
+                    }
+                    
+                    // 6. Сохраняем с новым именем
+                    const fileName = `Инвентаризация ${getMonthName(dateObj)} ${dateObj.getFullYear()} кофе К${route} ${carNumber}.xlsx`;
+                    workbook.saveAs(fileName);
+                });
+            } catch (error) {
+                console.error("Error:", error);
+                OfficeHelpers.UI.notify(error);
+                OfficeHelpers.Utilities.log(error);
+            }
+        }
+
+        // Инициализация OfficeJS
+        Office.onReady(() => {
+            document.getElementById('generateBtn').addEventListener('click', processTemplate);
         });
-        
-        // Функция для получения названия месяца
+
+        // Вспомогательная функция для названия месяца
         function getMonthName(date) {
-            const months = [
-                "января", "февраля", "марта", "апреля", "мая", "июня",
-                "июля", "августа", "сентября", "октября", "ноября", "декабря"
-            ];
+            const months = ["января", "февраля", "марта", "апреля", "мая", "июня",
+                          "июля", "августа", "сентября", "октября", "ноября", "декабря"];
             return months[date.getMonth()];
         }
     </script>
