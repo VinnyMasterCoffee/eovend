@@ -10,6 +10,15 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('downloadBtn').addEventListener('click', downloadInventoryWithExcelJS);
 });
 
+// Список позиций, которые нельзя редактировать
+const NON_EDITABLE_ITEMS = [
+    "Кофе Poetti Espresso Bravo 1кг зерно",
+    "Палочки размешиватели GlobalCups 105 мм",
+    "Стакан бумажный Формация WAKE ME CUP D80 300мл 50шт/уп",
+    "Кофе Live Coffee (Санта Ричи) зерно",
+    "Смесь сухая ARISTOCRAT Клубника 1кг"
+];
+
 async function loadTemplate() {
     try {
         const response = await fetch('/eovend/templates/invent.xlsx');
@@ -40,6 +49,9 @@ async function loadTemplate() {
             const row = jsonData[i];
             if (!row[0] || isNaN(row[0])) continue;
             
+            // Проверяем, является ли текущая позиция нередактируемой
+            const isEditable = !NON_EDITABLE_ITEMS.includes(row[2]);
+            
             const tr = document.createElement('tr');
             
             ['0', '1', '2', '3'].forEach(col => {
@@ -53,6 +65,15 @@ async function loadTemplate() {
             input.type = 'number';
             input.min = '0';
             input.dataset.rowIndex = i - headerRow - 1;
+            
+            // Если позиция не редактируемая, делаем поле readonly
+            if (!isEditable) {
+                input.readOnly = true;
+                input.placeholder = 'Не редактируется';
+                input.style.backgroundColor = '#f0f0f0';
+                input.style.cursor = 'not-allowed';
+            }
+            
             tdInput.appendChild(input);
             tr.appendChild(tdInput);
             
@@ -97,7 +118,7 @@ async function downloadInventoryWithExcelJS() {
             }
             
             // Заполняем данные
-            const inputs = document.querySelectorAll('#inventoryItems input');
+            const inputs = document.querySelectorAll('#inventoryItems input:not([readonly])');
             inputs.forEach((input, index) => {
                 const row = 6 + index; // Начальная строка данных
                 
