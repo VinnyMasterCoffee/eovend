@@ -1,4 +1,4 @@
-const EXCEL_TEMPLATE_PATH = '/invent/templates/invent.xlsx';
+const EXCEL_TEMPLATE_PATH = 'https://eovendcoffee.github.io/invent/templates/invent.xlsx';
 
 document.addEventListener('DOMContentLoaded', function() {
     const today = new Date();
