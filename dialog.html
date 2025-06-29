@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Сообщение</title>
+    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+</head>
+<body>
+    <p id="message"></p>
+    <button onclick="window.close()">OK</button>
+    
+    <script>
+        Office.onReady(() => {
+            const urlParams = new URLSearchParams(window.location.search);
+            document.getElementById('message').textContent = decodeURIComponent(urlParams.get('message'));
+        });
+    </script>
+</body>
+</html>
