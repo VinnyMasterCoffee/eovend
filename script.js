@@ -141,7 +141,10 @@ async function downloadInventoryWithExcelJS() {
     // Проверка маршрута
     if (!routeSelect.value) {
         routeSelect.classList.add('error');
-        document.getElementById('routeNumberError').style.display = 'block';
+        const errorElement = document.getElementById('routeNumberError');
+        errorElement.style.display = 'block';
+        errorElement.style.opacity = '1'; // Добавляем для гарантии отображения
+        isValid = false;
     }
     
     // Проверка номера машины
