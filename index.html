@@ -4,17 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Инвентаризация кофе</title>
-    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 1000px;
+            max-width: 800px;
             margin: 0 auto;
             padding: 20px;
-        }
-        h1 {
-            color: #333;
-            text-align: center;
         }
         .form-group {
             margin-bottom: 15px;
@@ -27,45 +24,31 @@
         input, select {
             width: 100%;
             padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
             box-sizing: border-box;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
         }
         button {
             background-color: #4CAF50;
             color: white;
             padding: 10px 15px;
             border: none;
-            border-radius: 4px;
             cursor: pointer;
             font-size: 16px;
-            margin-top: 20px;
         }
         button:hover {
             background-color: #45a049;
         }
-        .error {
-            color: red;
-            font-size: 14px;
-            margin-top: 5px;
-        }
-        .loading {
-            display: none;
+        #inventoryTable {
+            width: 100%;
+            border-collapse: collapse;
             margin-top: 20px;
-            text-align: center;
+        }
+        #inventoryTable th, #inventoryTable td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        #inventoryTable th {
+            background-color: #f2f2f2;
         }
     </style>
 </head>
@@ -73,206 +56,40 @@
     <h1>Инвентаризация кофе склада</h1>
     
     <div class="form-group">
-        <label for="date">Дата инвентаризации:</label>
-        <input type="date" id="date" name="date">
+        <label for="inventoryDate">Дата инвентаризации:</label>
+        <input type="date" id="inventoryDate" required>
     </div>
     
     <div class="form-group">
-        <label for="route">Номер маршрута (1-8):</label>
-        <input type="number" id="route" name="route" min="1" max="8">
-        <div id="routeError" class="error"></div>
+        <label for="routeNumber">Номер маршрута (1-8):</label>
+        <input type="number" id="routeNumber" min="1" max="8" required>
     </div>
     
     <div class="form-group">
-        <label for="carNumber">Номер машины (формат: А123БВ45):</label>
-        <input type="text" id="carNumber" name="carNumber" pattern="[А-Я]{1}\d{3}[А-Я]{2}\d{2}">
-        <div id="carNumberError" class="error"></div>
+        <label for="carNumber">Номер машины:</label>
+        <input type="text" id="carNumber" placeholder="А123БВ45" required>
     </div>
     
-    <h2>Остатки товаров</h2>
-    <table id="inventoryTable">
-        <thead>
-            <tr>
-                <th>№ п/п</th>
-                <th>Код</th>
-                <th>Номенклатура</th>
-                <th>Ед. изм.</th>
-                <th>Остатки склада факт (шт)</th>
-            </tr>
-        </thead>
-        <tbody id="inventoryBody">
-            <!-- Товары будут добавлены через JavaScript -->
-        </tbody>
-    </table>
-    
-    <div class="loading" id="loading">
-        Загрузка шаблона...
+    <div class="form-group">
+        <h3>Остатки товаров:</h3>
+        <table id="inventoryTable">
+            <thead>
+                <tr>
+                    <th>№ п/п</th>
+                    <th>Код</th>
+                    <th>Номенклатура</th>
+                    <th>Ед. изм.</th>
+                    <th>Остатки склада факт (шт)</th>
+                </tr>
+            </thead>
+            <tbody id="inventoryItems">
+                <!-- Товары будут добавлены через JavaScript -->
+            </tbody>
+        </table>
     </div>
     
-    <button id="generateBtn">Скачать заполненный файл</button>
-
-    <script>
-        // Товары из шаблона
-        const products = [
-            // Массив products остается без изменений
-        ];
-
-        // Функция для получения названия месяца
-        function getMonthName(date) {
-            const months = [
-                "января", "февраля", "марта", "апреля", "мая", "июня",
-                "июля", "августа", "сентября", "октября", "ноября", "декабря"
-            ];
-            return months[date.getMonth()];
-        }
-
-        // Инициализация приложения
-        Office.onReady((info) => {
-            if (info.host === Office.HostType.Excel) {
-                // Установка текущей даты по умолчанию
-                const today = new Date();
-                document.getElementById('date').valueAsDate = today;
-                
-                // Заполняем таблицу товарами
-                const tableBody = document.getElementById('inventoryBody');
-                products.forEach(product => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${product.id}</td>
-                        <td>${product.code}</td>
-                        <td>${product.name}</td>
-                        <td>${product.unit}</td>
-                        <td><input type="number" min="0" class="quantity" data-id="${product.id}"></td>
-                    `;
-                    tableBody.appendChild(row);
-                });
-
-                // Обработчик кнопки
-                document.getElementById('generateBtn').addEventListener('click', processTemplate);
-            } else {
-                showMessage("Это дополнение работает только в Excel");
-            }
-        });
-
-        // Функция для показа сообщений
-        function showMessage(message) {
-            Office.context.ui.displayDialogAsync(
-                `https://localhost:3000/dialog.html?message=${encodeURIComponent(message)}`,
-                { height: 20, width: 30 }
-            );
-        }
-
-        // Основная функция обработки
-        async function processTemplate() {
-            const loadingElement = document.getElementById('loading');
-            loadingElement.style.display = 'block';
-            
-            try {
-                // Проверка данных формы
-                const date = document.getElementById('date').value;
-                const route = document.getElementById('route').value;
-                const carNumber = document.getElementById('carNumber').value;
-                
-                if (!date || !route || !carNumber) {
-                    showMessage("Заполните все обязательные поля");
-                    return;
-                }
-
-                // Проверка формата номера машины
-                const carNumberPattern = /^[А-Я]{1}\d{3}[А-Я]{2}\d{2}$/;
-                if (!carNumberPattern.test(carNumber)) {
-                    showMessage("Номер машины должен быть в формате: А123БВ45");
-                    return;
-                }
-
-                // Проверка маршрута
-                if (route < 1 || route > 8) {
-                    showMessage("Номер маршрута должен быть от 1 до 8");
-                    return;
-                }
-
-                // Создаем новую книгу Excel
-                await Excel.run(async (context) => {
-                    try {
-                        const workbook = context.workbook;
-                        
-                        // Добавляем листы
-                        const sheet1 = workbook.worksheets.add("ведомость д-бух");
-                        const sheet2 = workbook.worksheets.add("Для печати");
-                        
-                        // Заполняем листы
-                        await fillInventorySheet(context, sheet1, date, "Остатки осн склада факт шт");
-                        await fillInventorySheet(context, sheet2, date, "Остатки склада факт шт");
-                        
-                        await context.sync();
-                        
-                        // Сохраняем файл
-                        const dateObj = new Date(date);
-                        const fileName = `Инвентаризация ${getMonthName(dateObj)} ${dateObj.getFullYear()} кофе К${route} ${carNumber}.xlsx`;
-                        
-                        const options = {
-                            conflictBehavior: Excel.SaveConflictBehavior.replace
-                        };
-                        
-                        await workbook.saveAs(fileName, options);
-                        await context.sync();
-                        
-                        showMessage(`Файл "${fileName}" успешно создан`);
-                    } catch (error) {
-                        console.error("Excel Error:", error);
-                        showMessage("Ошибка при работе с Excel: " + error.message);
-                        throw error;
-                    }
-                });
-                
-            } catch (error) {
-                console.error("General Error:", error);
-                // Сообщение уже показано во внутреннем catch
-            } finally {
-                loadingElement.style.display = 'none';
-            }
-        }
-
-        // Функция для заполнения листа инвентаризации
-        async function fillInventorySheet(context, sheet, date, quantityHeader) {
-            try {
-                const dateObj = new Date(date);
-                
-                // Заполняем шапку
-                sheet.getRange("A1:G1").values = [["", "", "Инвентаризационная ведомость кофе склада", "", "", "", ""]];
-                sheet.getRange("A3").values = [[`"___${dateObj.getDate()}___" ${getMonthName(dateObj)} ${dateObj.getFullYear()} г.`]];
-                sheet.getRange("A5:G5").values = [[
-                    "№ п/п", "Код", "Номенклатура", "Ед. изм.", 
-                    quantityHeader, "1с, 31.05.2025", "Сверка"
-                ]];
-                
-                // Заполняем данные товаров
-                for (let i = 0; i < products.length; i++) {
-                    const row = 6 + i;
-                    const product = products[i];
-                    const quantityInput = document.querySelector(`.quantity[data-id="${product.id}"]`);
-                    
-                    sheet.getRange(`A${row}:G${row}`).values = [[
-                        product.id,
-                        product.code,
-                        product.name,
-                        product.unit,
-                        quantityInput.value || 0, // По умолчанию 0, если не заполнено
-                        "",
-                        `=EXACT(F${row},E${row})`
-                    ]];
-                }
-                
-                // Форматирование
-                sheet.getRange("A5:G5").format.font.bold = true;
-                sheet.getUsedRange().format.autofitColumns();
-                
-                await context.sync();
-            } catch (error) {
-                console.error("Sheet Error:", error);
-                throw error;
-            }
-        }
-    </script>
+    <button id="downloadBtn">Скачать ведомость</button>
+    
+    <script src="script.js"></script>
 </body>
 </html>
