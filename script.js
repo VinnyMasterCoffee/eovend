@@ -35,7 +35,7 @@ const SIMPLIFIED_NAMES = {
 };
 
 document.addEventListener('DOMContentLoaded', function() {
-    const today = new Date();
+    const today = getCurrentDateInMSK();
     document.getElementById('inventoryDate').value = today.toISOString().split('T')[0];
     loadTemplate();
     
@@ -63,6 +63,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Автозаполнение номера машины
     document.getElementById('carNumber').value = ROUTE_TO_CAR_MAPPING[this.value] || '';
 });*/
+
+function getCurrentDateInMSK() {
+    const now = new Date();
+    // Москва UTC+3, поэтому добавляем 3 часа к UTC
+    const mskOffset = 3 * 60 * 60 * 1000; // 3 часа в миллисекундах
+    const mskTime = new Date(now.getTime() + mskOffset);
+    return new Date(mskTime.setUTCHours(0, 0, 0, 0)); // Устанавливаем начало дня
+}
 
 // Функция для нормализации строк (удаление лишних пробелов)
 function normalizeString(str) {
@@ -261,14 +269,22 @@ async function downloadInventoryWithExcelJS() {
 }
 
 function formatDate(date) {
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
+    // Убедимся, что дата корректно обрабатывается как МСК
+    const mskOffset = 3 * 60 * 60 * 1000;
+    const mskDate = new Date(date.getTime() + mskOffset);
+    
+    const day = String(mskDate.getUTCDate()).padStart(2, '0');
+    const month = String(mskDate.getUTCMonth() + 1).padStart(2, '0');
+    const year = mskDate.getUTCFullYear();
     return `${day}.${month}.${year}`;
 }
 
 function findDateCell(worksheet, dateInput) {
     const date = new Date(dateInput);
+    // Добавляем смещение для МСК
+    const mskOffset = 3 * 60 * 60 * 1000;
+    const mskDate = new Date(date.getTime() + mskOffset);
+    
     const monthNames = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 
                       'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
 
@@ -277,14 +293,12 @@ function findDateCell(worksheet, dateInput) {
             const cell = worksheet.getCell(row, col);
             if (!cell.text) continue;
 
-            // Замена для "мая 2025 г." (старый формат)
             if (cell.text.includes('мая 2025 г.')) {
-                cell.value = `"___${date.getDate()}___" ${monthNames[date.getMonth()]} ${date.getFullYear()} г.`;
+                cell.value = `"___${mskDate.getUTCDate()}___" ${monthNames[mskDate.getUTCMonth()]} ${mskDate.getUTCFullYear()} г.`;
             }
 
-            // Замена для "1с, 31.05.2025" (новый формат)
             if (cell.text.trim().startsWith('1с,') && cell.text.includes('.')) {
-                cell.value = `1с, ${formatDate(date)}`;
+                cell.value = `1с, ${formatDate(mskDate)}`;
             }
         }
     }
