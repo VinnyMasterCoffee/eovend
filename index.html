@@ -270,7 +270,9 @@
         }
 
         // Инициализация
-        document.addEventListener('DOMContentLoaded', loadTemplate);
+       document.addEventListener('DOMContentLoaded', function() {
+            loadTemplate();
+        });
     </script>
 </body>
 </html>
