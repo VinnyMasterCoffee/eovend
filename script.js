@@ -90,7 +90,6 @@ async function loadTemplate() {
         console.error('Ошибка загрузки шаблона:', error);
         alert('Ошибка загрузки шаблона. Пожалуйста, попробуйте позже.');
     }
-    console.log("Original name:", originalName, "Simplified:", SIMPLIFIED_NAMES[originalName]);
 }
 
 async function downloadInventoryWithExcelJS() {
