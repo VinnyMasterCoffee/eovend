@@ -19,6 +19,21 @@ const NON_EDITABLE_ITEMS = [
     "Смесь сухая ARISTOCRAT Клубника 1кг"
 ];
 
+// Словарь для упрощенных названий
+const SIMPLIFIED_NAMES = {
+    "Вода Нила Спрингс 19л": "Вода",
+    "Горячий шоколад ARISTOCRAT ШВЕЙЦАРСКИЙ гранулы 500г": "Шоколад",
+    "Капучино ARISTOCRAT Mokka Toffee 1000г": "Toffee",
+    "Капучино TORINO Irish Cream 1кг": "Irish",
+    "Кофе Жардин Пьяцца Арабика 1кг зерно": "Кофе Jardin",
+    "Крышка пластиковая 80мм без клапана Global Cups": "Крышки",
+    "Сладкий сахар в пакетах 1кг": "Сахар",
+    "Стакан бумажный GlobalCups D70 150мл 100шт/уп": "Стаканы",
+    "Сухое молоко гранул. \"AlpenMilch Плюс\" 1000г": "Молоко",
+    "Сухое молоко МАЛИНА 1000г": "Малина",
+    "Смесь сухая ARISTOCRAT Цитрус 1кг": "Цитрус"
+};
+
 async function loadTemplate() {
     try {
         const response = await fetch('/eovend/templates/invent.xlsx');
@@ -49,33 +64,49 @@ async function loadTemplate() {
             const row = jsonData[i];
             if (!row[0] || isNaN(row[0])) continue;
             
-            // Проверяем, является ли текущая позиция нередактируемой
             const isEditable = !NON_EDITABLE_ITEMS.includes(row[2]);
+            const simplifiedName = SIMPLIFIED_NAMES[row[2]] || row[2];
             
             const tr = document.createElement('tr');
             
-            ['0', '1', '2', '3'].forEach(col => {
-                const td = document.createElement('td');
-                td.textContent = row[col] || '';
-                tr.appendChild(td);
-            });
+            // № п/п (скрытая колонка)
+            const td1 = document.createElement('td');
+            td1.className = 'hidden-column';
+            td1.textContent = row[0];
+            tr.appendChild(td1);
             
-            const tdInput = document.createElement('td');
+            // Код (скрытая колонка)
+            const td2 = document.createElement('td');
+            td2.className = 'hidden-column';
+            td2.textContent = row[1];
+            tr.appendChild(td2);
+            
+            // Название (упрощенное)
+            const td3 = document.createElement('td');
+            td3.textContent = simplifiedName;
+            tr.appendChild(td3);
+            
+            // Ед. изм. (скрытая колонка)
+            const td4 = document.createElement('td');
+            td4.className = 'hidden-column';
+            td4.textContent = row[3];
+            tr.appendChild(td4);
+            
+            // Количество
+            const td5 = document.createElement('td');
             const input = document.createElement('input');
             input.type = 'number';
             input.min = '0';
             input.dataset.rowIndex = i - headerRow - 1;
             
-            // Если позиция не редактируемая, делаем поле readonly
             if (!isEditable) {
                 input.readOnly = true;
                 input.placeholder = 'Не редактируется';
-                input.style.backgroundColor = '#f0f0f0';
-                input.style.cursor = 'not-allowed';
+                input.className = 'non-editable';
             }
             
-            tdInput.appendChild(input);
-            tr.appendChild(tdInput);
+            td5.appendChild(input);
+            tr.appendChild(td5);
             
             tableBody.appendChild(tr);
         }
@@ -118,7 +149,7 @@ async function downloadInventoryWithExcelJS() {
             }
             
             // Заполняем данные
-            const inputs = document.querySelectorAll('#inventoryItems input:not([readonly])');
+            const inputs = document.querySelectorAll('#inventoryItems input:not(.non-editable)');
             inputs.forEach((input, index) => {
                 const row = 6 + index; // Начальная строка данных
                 
@@ -160,7 +191,6 @@ async function downloadInventoryWithExcelJS() {
     }
 }
 
-// Вспомогательная функция для поиска ячейки с датой
 function findDateCell(worksheet) {
     for (let row = 1; row <= 10; row++) {
         for (let col = 1; col <= 7; col++) {
