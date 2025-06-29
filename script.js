@@ -1,3 +1,5 @@
+const EXCEL_TEMPLATE_PATH = '/invent/templates/invent.xlsx';
+
 document.addEventListener('DOMContentLoaded', function() {
     const today = new Date();
     document.getElementById('inventoryDate').value = today.toISOString().split('T')[0];
@@ -34,7 +36,7 @@ function normalizeString(str) {
 
 async function loadTemplate() {
     try {
-        const response = await fetch('/invent/templates/invent.xlsx');
+        const response = await fetch(EXCEL_TEMPLATE_PATH);
         const arrayBuffer = await response.arrayBuffer();
         const data = new Uint8Array(arrayBuffer);
         const workbook = XLSX.read(data, {type: 'array'});
@@ -103,7 +105,7 @@ async function downloadInventoryWithExcelJS() {
     }
     
     try {
-        const response = await fetch('/eovend/templates/invent.xlsx');
+        const response = await fetch(EXCEL_TEMPLATE_PATH);
         const arrayBuffer = await response.arrayBuffer();
         
         const workbook = new ExcelJS.Workbook();
