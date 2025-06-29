@@ -5,7 +5,6 @@
     <title>Редактор инвентаризации кофе</title>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.19.3/dist/xlsx.full.min.js"></script>
     <style>
-        /* Стили остаются без изменений */
         body { font-family: Arial, sans-serif; margin: 20px; }
         .form-group { margin-bottom: 15px; }
         label { display: inline-block; width: 180px; font-weight: bold; }
@@ -15,6 +14,7 @@
         .loading { background: #fff3cd; color: #856404; }
         .success { background: #d4edda; color: #155724; }
         .error { background: #f8d7da; color: #721c24; }
+        .error-input { border-color: #f8d7da !important; }
     </style>
 </head>
 <body>
@@ -29,9 +29,9 @@
     
     <div class="form-group">
         <label>Номер маршрута (К):</label>
-        <input type="text" id="routeNumber" required>
+        <input type="text" id="routeNumber" required placeholder="Например: 123">
         <label style="margin-left: 20px;">Номер машины:</label>
-        <input type="text" id="carNumber" required>
+        <input type="text" id="carNumber" required placeholder="Например: А123БВ">
     </div>
 
     <h3>Фактические остатки:</h3>
@@ -41,7 +41,7 @@
 
     <script>
         // Конфигурация
-        const TEMPLATE_PATH = '/invent.xlsx'; // Путь к шаблону в репозитории
+        const TEMPLATE_PATH = '/templates/invent.xlsx'; // Исправленный путь к шаблону
         const monthNames = {
             nom: ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", 
                   "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"],
@@ -49,11 +49,23 @@
                   "июля", "августа", "сентября", "октября", "ноября", "декабря"]
         };
 
-        // Товары для редактирования (E6-E21 кроме исключений)
+        // Полный список товаров для редактирования (E6-E21 кроме исключений)
         const inventoryItems = [
             { id: 1, name: "Вода Нила Спрингс 19л" },
             { id: 2, name: "Горячий шоколад ARISTOCRAT ШВЕЙЦАРСКИЙ гранулы 500г" },
-            // ... остальные товары (аналогично вашему списку)
+            { id: 3, name: "Какао ARISTOCRAT ШВЕЙЦАРСКИЙ 500г" },
+            { id: 4, name: "Капучино ARISTOCRAT CLASSICO 500г" },
+            { id: 5, name: "Капучино ARISTOCRAT VANILLA 500г" },
+            { id: 6, name: "Капучино ARISTOCRAT CARAMEL 500г" },
+            { id: 7, name: "Кофе молотый ARISTOCRAT COLUMBIA 500г" },
+            { id: 8, name: "Кофе молотый ARISTOCRAT BRAZIL 500г" },
+            { id: 9, name: "Кофе растворимый ARISTOCRAT GOLD 500г" },
+            { id: 10, name: "Кофе растворимый ARISTOCRAT CLASSIC 500г" },
+            { id: 11, name: "Латте ARISTOCRAT CLASSICO 500г" },
+            { id: 12, name: "Латте ARISTOCRAT VANILLA 500г" },
+            { id: 13, name: "Латте ARISTOCRAT CARAMEL 500г" },
+            { id: 14, name: "Сахар-песок 1кг" },
+            { id: 15, name: "Сливки сухие ARISTOCRAT 1кг" },
             { id: 16, name: "Смесь сухая ARISTOCRAT Клубника 1кг", editable: false }
         ].filter(item => item.editable !== false);
 
@@ -74,123 +86,4 @@
                 workbookTemplate = XLSX.read(data);
                 
                 // 2. Проверяем структуру
-                if (!workbookTemplate.SheetNames.includes('ведомость д-бух')) {
-                    throw new Error("Шаблон не содержит лист 'ведомость д-бух'");
-                }
-                
-                // 3. Создаем форму
-                createInputForm();
-                statusEl.textContent = "Шаблон успешно загружен!";
-                statusEl.className = "success";
-                document.getElementById('downloadBtn').disabled = false;
-                
-            } catch (error) {
-                console.error("Ошибка загрузки шаблона:", error);
-                document.getElementById('status').textContent = 
-                    `Ошибка загрузки шаблона: ${error.message}`;
-                document.getElementById('status').className = "error";
-            }
-        }
-
-        // Создание формы ввода
-        function createInputForm() {
-            const container = document.getElementById("inventoryInputs");
-            
-            inventoryItems.forEach(item => {
-                const div = document.createElement("div");
-                div.className = "form-group";
-                div.innerHTML = `
-                    <label>${item.name}:</label>
-                    <input type="number" id="item_${item.id}" min="0" value="0">
-                `;
-                container.appendChild(div);
-            });
-            
-            // Установка текущей даты
-            const today = new Date();
-            document.getElementById('inventoryDate').value = today.toISOString().substr(0, 10);
-        }
-
-        // Генерация отчета
-        document.getElementById('downloadBtn').addEventListener('click', function() {
-            try {
-                if (!validateForm()) return;
-                
-                // Клонируем шаблон, чтобы не изменять оригинал
-                const workbook = XLSX.utils.book_new();
-                for (const sheetName of workbookTemplate.SheetNames) {
-                    const ws = XLSX.utils.json_to_sheet(
-                        XLSX.utils.sheet_to_json(workbookTemplate.Sheets[sheetName])
-                    );
-                    XLSX.utils.book_append_sheet(workbook, ws, sheetName);
-                }
-
-                // Обновляем данные
-                updateWorkbook(workbook);
-
-                // Генерируем имя файла
-                const date = new Date(document.getElementById('inventoryDate').value);
-                const month = monthNames.nom[date.getMonth()];
-                const year = date.getFullYear();
-                const route = document.getElementById('routeNumber').value;
-                const car = document.getElementById('carNumber').value;
-                
-                XLSX.writeFile(workbook, `Инвентаризация ${month} ${year} Кофе К${route} ${car}.xlsx`);
-                
-            } catch (error) {
-                alert(`Ошибка: ${error.message}`);
-                console.error(error);
-            }
-        });
-
-        // Обновление данных в книге
-        function updateWorkbook(wb) {
-            const date = new Date(document.getElementById('inventoryDate').value);
-            const day = date.getDate();
-            const month = monthNames.dat[date.getMonth()];
-            const year = date.getFullYear();
-            const route = document.getElementById('routeNumber').value;
-            const car = document.getElementById('carNumber').value;
-
-            // Обновляем все листы
-            wb.SheetNames.forEach(sheetName => {
-                const ws = wb.Sheets[sheetName];
-                
-                // 1. Обновляем дату (A3)
-                if (ws['A3']) ws['A3'].v = `"___${day}___" ${month} ${year} г.`;
-                
-                // 2. Обновляем остатки (E6-E21)
-                inventoryItems.forEach(item => {
-                    const cell = `E${5 + item.id}`;
-                    const value = document.getElementById(`item_${item.id}`).value;
-                    if (ws[cell]) ws[cell].v = Number(value);
-                });
-                
-                // 3. Обновляем номер машины (B22/C22)
-                if (ws['B22']) ws['B22'].v = `К${route}`;
-                if (ws['C22']) ws['C22'].v = car;
-            });
-        }
-
-        // Валидация формы
-        function validateForm() {
-            let isValid = true;
-            ['inventoryDate', 'routeNumber', 'carNumber'].forEach(id => {
-                const el = document.getElementById(id);
-                if (!el.value) {
-                    el.style.borderColor = 'red';
-                    isValid = false;
-                } else {
-                    el.style.borderColor = '';
-                }
-            });
-            
-            if (!isValid) alert("Заполните все обязательные поля!");
-            return isValid;
-        }
-
-        // Инициализация
-        document.addEventListener('DOMContentLoaded', loadTemplate);
-    </script>
-</body>
-</html>
+        
