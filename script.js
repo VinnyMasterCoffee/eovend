@@ -119,6 +119,8 @@ async function downloadInventoryWithExcelJS() {
     const carNumber = document.getElementById('carNumber').value;
     
     if (!dateInput.value || !routeSelect.value) {
+    if (!dateInput.value) dateInput.classList.add('error');
+    if (!routeSelect.value) routeSelect.classList.add('error');
         alert('Пожалуйста, выберите дату и маршрут');
         return;
     }
