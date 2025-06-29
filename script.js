@@ -113,25 +113,44 @@ async function downloadInventoryWithExcelJS() {
                 dateCell.value = `"___${date.getDate()}___" ${monthNames[date.getMonth()]} ${date.getFullYear()} г.`;
             }
             
-            const inputs = document.querySelectorAll('#inventoryItems input');
-            inputs.forEach((input, index) => {
-                const row = 6 + index;
+            // Получаем все строки из Excel, чтобы найти соответствия
+            const excelRows = [];
+            let rowIndex = 6; // Начальная строка с данными
+            while (true) {
+                const nameCell = worksheet.getCell(`C${rowIndex}`);
+                if (!nameCell.value) break;
                 
-                const factCell = worksheet.getCell(`E${row}`);
-                factCell.value = input.value ? parseInt(input.value) : null;
-                
-                const checkCell = worksheet.getCell(`G${row}`);
-                checkCell.value = { formula: `EXACT(F${row},E${row})`, result: false };
-                
-                ['A', 'B', 'C', 'D', 'E', 'F', 'G'].forEach(col => {
-                    const cell = worksheet.getCell(`${col}${row}`);
-                    cell.border = {
-                        top: {style: 'thin'},
-                        left: {style: 'thin'},
-                        bottom: {style: 'thin'},
-                        right: {style: 'thin'}
-                    };
+                excelRows.push({
+                    rowNumber: rowIndex,
+                    name: nameCell.value
                 });
+                rowIndex++;
+            }
+            
+            const inputs = document.querySelectorAll('#inventoryItems input');
+            inputs.forEach((input) => {
+                const originalName = input.dataset.originalName;
+                const excelRow = excelRows.find(row => row.name === originalName);
+                
+                if (excelRow) {
+                    const row = excelRow.rowNumber;
+                    
+                    const factCell = worksheet.getCell(`E${row}`);
+                    factCell.value = input.value ? parseInt(input.value) : null;
+                    
+                    const checkCell = worksheet.getCell(`G${row}`);
+                    checkCell.value = { formula: `EXACT(F${row},E${row})`, result: false };
+                    
+                    ['A', 'B', 'C', 'D', 'E', 'F', 'G'].forEach(col => {
+                        const cell = worksheet.getCell(`${col}${row}`);
+                        cell.border = {
+                            top: {style: 'thin'},
+                            left: {style: 'thin'},
+                            bottom: {style: 'thin'},
+                            right: {style: 'thin'}
+                        };
+                    });
+                }
             });
         }
         
