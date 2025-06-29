@@ -12,31 +12,6 @@ const ROUTE_TO_CAR_MAPPING = {
     "8": "М332ХТ33"
 };
 
-document.addEventListener('DOMContentLoaded', function() {
-    const today = new Date();
-    document.getElementById('inventoryDate').value = today.toISOString().split('T')[0];
-    loadTemplate();
-    
-    const routeSelect = document.getElementById('routeNumber');
-    const carNumberInput = document.getElementById('carNumber');
-    
-    // Автозаполнение номера машины
-    routeSelect.addEventListener('change', function() {
-        carNumberInput.value = ROUTE_TO_CAR_MAPPING[this.value] || '';
-    });
-    
-    document.getElementById('downloadBtn').addEventListener('click', downloadInventoryWithExcelJS);
-});
-
-document.getElementById('routeNumber').addEventListener('change', function() {
-    if (this.value) {
-        this.classList.remove('error');
-        document.getElementById('routeNumberError').style.display = 'none';
-    }
-    // Автозаполнение номера машины
-    document.getElementById('carNumber').value = ROUTE_TO_CAR_MAPPING[this.value] || '';
-});
-
 const NON_EDITABLE_ITEMS = [
     "Кофе Poetti Espresso Bravo 1кг зерно",
     "Палочки размешиватели GlobalCups 105 мм",
@@ -58,6 +33,32 @@ const SIMPLIFIED_NAMES = {
     "Сухое молоко МАЛИНА 1000г": "Малина",
     "Смесь сухая ARISTOCRAT Цитрус 1кг": "Цитрус"
 };
+
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date();
+    document.getElementById('inventoryDate').value = today.toISOString().split('T')[0];
+    loadTemplate();
+    
+    const routeSelect = document.getElementById('routeNumber');
+    const carNumberInput = document.getElementById('carNumber');
+    
+    // Автозаполнение номера машины
+    routeSelect.addEventListener('change', function() {
+        carNumberInput.value = ROUTE_TO_CAR_MAPPING[this.value] || '';
+    });
+    
+    document.getElementById('downloadBtn').addEventListener('click', downloadInventoryWithExcelJS);
+    document.getElementById('routeNumberError').style.display = 'none';
+});
+
+document.getElementById('routeNumber').addEventListener('change', function() {
+    if (this.value) {
+        this.classList.remove('error');
+        document.getElementById('routeNumberError').style.display = 'none';
+    }
+    // Автозаполнение номера машины
+    document.getElementById('carNumber').value = ROUTE_TO_CAR_MAPPING[this.value] || '';
+});
 
 // Функция для нормализации строк (удаление лишних пробелов)
 function normalizeString(str) {
