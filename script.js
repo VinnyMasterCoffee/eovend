@@ -60,8 +60,9 @@ async function loadTemplate() {
             const row = jsonData[i];
             if (!row[0] || isNaN(row[0])) continue;
 
-            // Пропускаем нередактируемые товары
             const originalName = normalizeString(row[2]);
+            
+            // Пропускаем только действительно нередактируемые товары
             if (NON_EDITABLE_ITEMS.some(item => normalizeString(item) === originalName)) continue;
 
             // Получаем упрощённое название
@@ -69,18 +70,16 @@ async function loadTemplate() {
 
             const tr = document.createElement('tr');
             
-            // Название товара (упрощённое)
             const nameTd = document.createElement('td');
             nameTd.textContent = simplifiedName;
             tr.appendChild(nameTd);
 
-            // Поле ввода
             const tdInput = document.createElement('td');
             const input = document.createElement('input');
             input.type = 'number';
             input.min = '0';
             input.dataset.rowIndex = i - headerRow - 1;
-            input.dataset.originalName = originalName; // Сохраняем оригинальное название
+            input.dataset.originalName = originalName;
 
             tdInput.appendChild(input);
             tr.appendChild(tdInput);
