@@ -34,7 +34,7 @@ function normalizeString(str) {
 
 async function loadTemplate() {
     try {
-        const response = await fetch('/eovend/templates/invent.xlsx');
+        const response = await fetch('/invent/templates/invent.xlsx');
         const arrayBuffer = await response.arrayBuffer();
         const data = new Uint8Array(arrayBuffer);
         const workbook = XLSX.read(data, {type: 'array'});
