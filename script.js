@@ -303,5 +303,19 @@ function findDateCell(worksheet, dateInput) {
         }
     }
 }
-
+// Плавное смещение при фокусе на поле ввода
+document.querySelectorAll('#inventoryTable input').forEach(input => {
+    input.addEventListener('focus', function() {
+        // Вычисляем позицию элемента относительно верха страницы
+        const elementPosition = this.getBoundingClientRect().top;
+        // Вычисляем текущую позицию прокрутки
+        const offsetPosition = elementPosition + window.pageYOffset - 100; // 100px отступ сверху
+        
+        // Плавная прокрутка к элементу
+        window.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth'
+        });
+    });
+});
 
