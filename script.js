@@ -67,7 +67,8 @@ async function loadTemplate() {
 
             // Получаем упрощённое название
             const simplifiedName = SIMPLIFIED_NAMES[originalName] || originalName;
-
+            console.log("Original name from Excel:", originalName);
+            console.log("Simplified name:", simplifiedName);
             const tr = document.createElement('tr');
             
             const nameTd = document.createElement('td');
@@ -189,5 +190,4 @@ function findDateCell(worksheet) {
     return null;
 }
 
-console.log("Original name from Excel:", originalName);
-console.log("Simplified name:", simplifiedName);
+
