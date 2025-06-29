@@ -86,4 +86,178 @@
                 workbookTemplate = XLSX.read(data);
                 
                 // 2. Проверяем структуру
-        
+                if (!workbookTemplate.SheetNames.includes('ведомость д-бух')) {
+                    throw new Error("Шаблон не содержит лист 'ведомость д-бух'");
+                }
+                
+                // 3. Создаем форму
+                createInputForm();
+                statusEl.textContent = "Шаблон успешно загружен!";
+                statusEl.className = "success";
+                document.getElementById('downloadBtn').disabled = false;
+                
+            } catch (error) {
+                console.error("Ошибка загрузки шаблона:", error);
+                const statusEl = document.getElementById('status');
+                statusEl.textContent = `Ошибка загрузки шаблона: ${error.message}`;
+                statusEl.className = "error";
+                
+                // Показываем дополнительные инструкции если файл не найден
+                if (error.message.includes('404')) {
+                    statusEl.innerHTML += `<br><br>Убедитесь, что файл шаблона находится по пути: ${TEMPLATE_PATH}`;
+                }
+            }
+        }
+
+        // Создание формы ввода
+        function createInputForm() {
+            const container = document.getElementById("inventoryInputs");
+            container.innerHTML = ''; // Очищаем контейнер
+            
+            inventoryItems.forEach(item => {
+                const div = document.createElement("div");
+                div.className = "form-group";
+                div.innerHTML = `
+                    <label>${item.name}:</label>
+                    <input type="number" id="item_${item.id}" min="0" value="0" step="1" class="inventory-item">
+                `;
+                container.appendChild(div);
+            });
+            
+            // Установка текущей даты по умолчанию
+            const today = new Date();
+            document.getElementById('inventoryDate').valueAsDate = today;
+        }
+
+        // Генерация отчета
+        document.getElementById('downloadBtn').addEventListener('click', function() {
+            try {
+                if (!validateForm()) return;
+                
+                // Показываем статус обработки
+                const statusEl = document.getElementById('status');
+                statusEl.textContent = "Подготовка файла...";
+                statusEl.className = "loading";
+                
+                // Даем время на обновление UI
+                setTimeout(() => {
+                    try {
+                        // Клонируем шаблон
+                        const workbook = XLSX.read(XLSX.write(workbookTemplate, {type: 'array'}));
+                        
+                        // Обновляем данные
+                        updateWorkbook(workbook);
+
+                        // Генерируем имя файла
+                        const date = new Date(document.getElementById('inventoryDate').value);
+                        const month = monthNames.nom[date.getMonth()];
+                        const year = date.getFullYear();
+                        const route = document.getElementById('routeNumber').value.trim();
+                        const car = document.getElementById('carNumber').value.trim();
+                        
+                        const fileName = `Инвентаризация ${month} ${year} Кофе К${route} ${car}.xlsx`;
+                        
+                        XLSX.writeFile(workbook, fileName);
+                        
+                        statusEl.textContent = "Файл успешно сгенерирован!";
+                        statusEl.className = "success";
+                    } catch (error) {
+                        console.error("Ошибка генерации файла:", error);
+                        statusEl.textContent = `Ошибка генерации файла: ${error.message}`;
+                        statusEl.className = "error";
+                    }
+                }, 100);
+                
+            } catch (error) {
+                console.error("Ошибка:", error);
+                alert(`Ошибка: ${error.message}`);
+            }
+        });
+
+        // Обновление данных в книге
+        function updateWorkbook(wb) {
+            const date = new Date(document.getElementById('inventoryDate').value);
+            const day = date.getDate();
+            const month = monthNames.dat[date.getMonth()];
+            const year = date.getFullYear();
+            const route = document.getElementById('routeNumber').value.trim();
+            const car = document.getElementById('carNumber').value.trim();
+
+            // Обновляем все листы
+            wb.SheetNames.forEach(sheetName => {
+                const ws = wb.Sheets[sheetName];
+                
+                // 1. Обновляем дату (A3)
+                if (ws['A3']) {
+                    ws['A3'].v = `"___${day}___" ${month} ${year} г.`;
+                    ws['A3'].t = 's'; // Указываем что это строка
+                }
+                
+                // 2. Обновляем остатки (E6-E21)
+                inventoryItems.forEach(item => {
+                    const cell = `E${5 + item.id}`;
+                    const value = parseFloat(document.getElementById(`item_${item.id}`).value) || 0;
+                    if (ws[cell]) {
+                        ws[cell].v = value;
+                        ws[cell].t = 'n'; // Указываем что это число
+                    }
+                });
+                
+                // 3. Обновляем номер машины (B22/C22)
+                if (ws['B22']) {
+                    ws['B22'].v = `К${route}`;
+                    ws['B22'].t = 's';
+                }
+                if (ws['C22']) {
+                    ws['C22'].v = car;
+                    ws['C22'].t = 's';
+                }
+            });
+        }
+
+        // Валидация формы
+        function validateForm() {
+            let isValid = true;
+            
+            // Проверка основных полей
+            const requiredFields = [
+                {id: 'inventoryDate', message: 'Укажите дату инвентаризации'},
+                {id: 'routeNumber', message: 'Укажите номер маршрута'},
+                {id: 'carNumber', message: 'Укажите номер машины'}
+            ];
+            
+            requiredFields.forEach(field => {
+                const el = document.getElementById(field.id);
+                if (!el.value || !el.value.trim()) {
+                    el.classList.add('error-input');
+                    alert(field.message);
+                    isValid = false;
+                } else {
+                    el.classList.remove('error-input');
+                }
+            });
+            
+            // Проверка числовых полей
+            document.querySelectorAll('.inventory-item').forEach(input => {
+                const value = parseFloat(input.value);
+                if (isNaN(value) || value < 0) {
+                    input.classList.add('error-input');
+                    isValid = false;
+                } else {
+                    input.classList.remove('error-input');
+                }
+            });
+            
+            if (!isValid) {
+                alert("Проверьте правильность заполнения всех полей!");
+                return false;
+            }
+            
+            return true;
+        }
+
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', loadTemplate);
+    </script>
+</body>
+</html>
