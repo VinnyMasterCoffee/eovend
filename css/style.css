@@ -111,6 +111,14 @@ label {
     background-color: #45a049;
 }
 
-.error {
-    border: 1px solid red !important;
+.input.error {
+    border: 1px solid #ff4d4d;
+    box-shadow: 0 0 0 2px rgba(255, 77, 77, 0.2);
+}
+
+.error-message {
+    color: #ff4d4d;
+    font-size: 14px;
+    margin-top: 5px;
+    display: none;
 }
