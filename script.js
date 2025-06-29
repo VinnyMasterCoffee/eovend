@@ -1,4 +1,5 @@
 const EXCEL_TEMPLATE_PATH = 'https://eovendcoffee.github.io/invent/templates/invent.xlsx';
+const DEBUG_MODE = false; // Поставьте true, если нужно включить логирование
 
 document.addEventListener('DOMContentLoaded', function() {
     const today = new Date();
@@ -136,10 +137,12 @@ async function downloadInventoryWithExcelJS() {
             const inputs = document.querySelectorAll('#inventoryItems input');
             inputs.forEach((input) => {
                 const originalName = input.dataset.originalName;
-                console.log("Searching for:", originalName);
-                excelRows.forEach(row => {
-                    console.log("Excel row name:", row.name, "Normalized:", normalizeString(row.name));
-                });
+                if (DEBUG_MODE) {
+                    console.log("Searching for:", originalName);
+                    excelRows.forEach(row => {
+                        console.log("Excel row name:", row.name, "Normalized:", normalizeString(row.name));
+                    });
+                }
         
             const excelRow = excelRows.find(row => normalizeString(row.name) === originalName);
                 if (excelRow) {
