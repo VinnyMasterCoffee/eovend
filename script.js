@@ -136,8 +136,6 @@ async function loadTemplate() {
         console.error('Ошибка загрузки шаблона:', error);
         alert('Ошибка загрузки шаблона. Пожалуйста, попробуйте позже.');
     }
-    nameTd.setAttribute('data-label', 'Название продукта');
-    tdInput.setAttribute('data-label', 'Количество продуктов (шт)');
 }
 
 async function downloadInventoryWithExcelJS() {
