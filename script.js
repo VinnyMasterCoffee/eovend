@@ -1,16 +1,10 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Устанавливаем сегодняшнюю дату по умолчанию
     const today = new Date();
     document.getElementById('inventoryDate').value = today.toISOString().split('T')[0];
-    
-    // Загружаем шаблон и заполняем таблицу
     loadTemplate();
-    
-    // Обработчик кнопки скачивания
     document.getElementById('downloadBtn').addEventListener('click', downloadInventoryWithExcelJS);
 });
 
-// Список позиций, которые нельзя редактировать
 const NON_EDITABLE_ITEMS = [
     "Кофе Poetti Espresso Bravo 1кг зерно",
     "Палочки размешиватели GlobalCups 105 мм",
@@ -19,18 +13,29 @@ const NON_EDITABLE_ITEMS = [
     "Смесь сухая ARISTOCRAT Клубника 1кг"
 ];
 
+const SIMPLIFIED_NAMES = {
+    "Вода Нила Спрингс 19л": "Вода",
+    "Горячий шоколад ARISTOCRAT ШВЕЙЦАРСКИЙ гранулы 500г": "Шоколад",
+    "Капучино ARISTOCRAT Mokka Toffee 1000г": "Toffee",
+    "Капучино TORINO Irish Cream 1кг": "Irish",
+    "Кофе Жардин Пьяцца Арабика 1кг зерно": "Кофе Jardin",
+    "Крышка пластиковая 80мм без клапана Global Cups": "Крышки",
+    "Сладкий сахар в пакетах 1кг": "Сахар",
+    "Стакан бумажный GlobalCups D70 150мл 100шт/уп": "Стаканы",
+    "Сухое молоко гранул. \"AlpenMilch Плюс\" 1000г": "Молоко",
+    "Сухое молоко МАЛИНА 1000г": "Малина",
+    "Смесь сухая ARISTOCRAT Цитрус 1кг": "Цитрус"
+};
+
 async function loadTemplate() {
     try {
         const response = await fetch('/eovend/templates/invent.xlsx');
         const arrayBuffer = await response.arrayBuffer();
-        
-        // Используем SheetJS только для чтения данных (не для записи)
         const data = new Uint8Array(arrayBuffer);
         const workbook = XLSX.read(data, {type: 'array'});
         const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
         const jsonData = XLSX.utils.sheet_to_json(firstSheet, {header: 1});
         
-        // Находим строку с заголовками
         let headerRow = -1;
         for (let i = 0; i < jsonData.length; i++) {
             if (jsonData[i][0] === "№ п/п") {
@@ -41,7 +46,6 @@ async function loadTemplate() {
         
         if (headerRow === -1) throw new Error("Не удалось найти заголовки");
         
-        // Заполняем таблицу на странице
         const tableBody = document.getElementById('inventoryItems');
         tableBody.innerHTML = '';
         
@@ -49,24 +53,31 @@ async function loadTemplate() {
             const row = jsonData[i];
             if (!row[0] || isNaN(row[0])) continue;
             
-            // Проверяем, является ли текущая позиция нередактируемой
             const isEditable = !NON_EDITABLE_ITEMS.includes(row[2]);
+            const simplifiedName = SIMPLIFIED_NAMES[row[2]] || row[2];
             
             const tr = document.createElement('tr');
             
-            ['0', '1', '2', '3'].forEach(col => {
+            // Скрытые столбцы (№ п/п, Код, Ед. изм.)
+            ['0', '1', '3'].forEach(col => {
                 const td = document.createElement('td');
+                td.className = 'hidden-column';
                 td.textContent = row[col] || '';
                 tr.appendChild(td);
             });
             
+            // Столбец с названием (упрощенным, если есть)
+            const nameTd = document.createElement('td');
+            nameTd.textContent = simplifiedName;
+            tr.appendChild(nameTd);
+            
+            // Поле ввода
             const tdInput = document.createElement('td');
             const input = document.createElement('input');
             input.type = 'number';
             input.min = '0';
             input.dataset.rowIndex = i - headerRow - 1;
             
-            // Если позиция не редактируемая, делаем поле readonly
             if (!isEditable) {
                 input.readOnly = true;
                 input.placeholder = 'Не редактируется';
@@ -86,6 +97,7 @@ async function loadTemplate() {
     }
 }
 
+// Остальной код (downloadInventoryWithExcelJS и findDateCell) остается без изменений
 async function downloadInventoryWithExcelJS() {
     const dateInput = document.getElementById('inventoryDate');
     const routeNumber = document.getElementById('routeNumber').value;
@@ -97,18 +109,15 @@ async function downloadInventoryWithExcelJS() {
     }
     
     try {
-        // Загружаем шаблон с помощью ExcelJS
         const response = await fetch('/eovend/templates/invent.xlsx');
         const arrayBuffer = await response.arrayBuffer();
         
         const workbook = new ExcelJS.Workbook();
         await workbook.xlsx.load(arrayBuffer);
         
-        // Обновляем оба листа
         for (let sheetIndex = 0; sheetIndex < workbook.worksheets.length; sheetIndex++) {
             const worksheet = workbook.worksheets[sheetIndex];
             
-            // Обновляем дату в шаблоне
             const dateCell = findDateCell(worksheet);
             if (dateCell) {
                 const date = new Date(dateInput.value);
@@ -117,20 +126,16 @@ async function downloadInventoryWithExcelJS() {
                 dateCell.value = `"___${date.getDate()}___" ${monthNames[date.getMonth()]} ${date.getFullYear()} г.`;
             }
             
-            // Заполняем данные
             const inputs = document.querySelectorAll('#inventoryItems input:not([readonly])');
             inputs.forEach((input, index) => {
-                const row = 6 + index; // Начальная строка данных
+                const row = 6 + index;
                 
-                // Фактические остатки (колонка E)
                 const factCell = worksheet.getCell(`E${row}`);
                 factCell.value = input.value ? parseInt(input.value) : null;
                 
-                // Формула сверки (колонка G)
                 const checkCell = worksheet.getCell(`G${row}`);
                 checkCell.value = { formula: `EXACT(F${row},E${row})`, result: false };
                 
-                // Применяем стили к ячейкам
                 ['A', 'B', 'C', 'D', 'E', 'F', 'G'].forEach(col => {
                     const cell = worksheet.getCell(`${col}${row}`);
                     cell.border = {
@@ -143,13 +148,11 @@ async function downloadInventoryWithExcelJS() {
             });
         }
         
-        // Генерируем имя файла
         const date = new Date(dateInput.value);
         const monthNames = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь',
                           'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'];
         const fileName = `Инвентаризация ${monthNames[date.getMonth()]} ${date.getFullYear()} кофе К${routeNumber} ${carNumber}.xlsx`;
         
-        // Скачиваем файл
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
         saveAs(blob, fileName);
@@ -160,7 +163,6 @@ async function downloadInventoryWithExcelJS() {
     }
 }
 
-// Вспомогательная функция для поиска ячейки с датой
 function findDateCell(worksheet) {
     for (let row = 1; row <= 10; row++) {
         for (let col = 1; col <= 7; col++) {
