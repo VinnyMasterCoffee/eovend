@@ -51,6 +51,9 @@
         #inventoryTable th {
             background-color: #f2f2f2;
         }
+        .hidden-column {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -76,10 +79,10 @@
         <table id="inventoryTable">
             <thead>
                 <tr>
-                    <th>№ п/п</th>
-                    <th>Код</th>
+                    <th class="hidden-column">№ п/п</th>
+                    <th class="hidden-column">Код</th>
                     <th>Номенклатура</th>
-                    <th>Ед. изм.</th>
+                    <th class="hidden-column">Ед. изм.</th>
                     <th>Остатки склада факт (шт)</th>
                 </tr>
             </thead>
