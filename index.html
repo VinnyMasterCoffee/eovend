@@ -112,6 +112,70 @@
     <button id="generateBtn">Скачать заполненный файл</button>
 
     <script>
+        // Новая функция для клонирования листа с сохранением стилей
+        function cloneSheetWithStyles(originalWorkbook, sheetName) {
+            // Создаем глубокую копию листа
+            const originalSheet = originalWorkbook.Sheets[sheetName];
+            const newSheet = JSON.parse(JSON.stringify(originalSheet));
+            
+            // Копируем специальные свойства (стили, объединенные ячейки и т.д.)
+            if (originalSheet['!merges']) {
+                newSheet['!merges'] = originalSheet['!merges'].slice();
+            }
+            if (originalSheet['!cols']) {
+                newSheet['!cols'] = originalSheet['!cols'].slice();
+            }
+            if (originalSheet['!rows']) {
+                newSheet['!rows'] = originalSheet['!rows'].slice();
+            }
+            if (originalSheet['!protect']) {
+                newSheet['!protect'] = {...originalSheet['!protect']};
+            }
+            
+            return newSheet;
+        }
+
+        // Модифицированная функция для генерации файла
+        document.getElementById('generateBtn').addEventListener('click', async function() {
+            // ... (проверки валидности остаются такими же) ...
+
+            // Копируем исходный шаблон с сохранением всех стилей
+            const template = window.templateData.workbook;
+            const workbook = XLSX.utils.book_new();
+            
+            // Обрабатываем каждый лист
+            template.SheetNames.forEach(sheetName => {
+                // Создаем копию листа с сохранением форматирования
+                const newWorksheet = cloneSheetWithStyles(template, sheetName);
+                
+                // Обновляем дату в шаблоне (ячейка A4)
+                const dateCell = 'A4';
+                if (newWorksheet[dateCell]) {
+                    newWorksheet[dateCell].v = dateString;
+                    newWorksheet[dateCell].t = 's';
+                } else {
+                    newWorksheet[dateCell] = { t: 's', v: dateString };
+                }
+                
+                // Обновляем количества в колонке E
+                document.querySelectorAll('.quantity').forEach(input => {
+                    const rowNum = input.getAttribute('data-row');
+                    const cellAddress = XLSX.utils.encode_cell({ c: 4, r: rowNum - 1 }); // Колонка E (4)
+                    
+                    if (newWorksheet[cellAddress]) {
+                        newWorksheet[cellAddress].v = input.value || '';
+                        newWorksheet[cellAddress].t = 'n';
+                    } else {
+                        newWorksheet[cellAddress] = { t: 'n', v: input.value || '' };
+                    }
+                });
+                
+                // Добавляем лист в новую книгу
+                XLSX.utils.book_append_sheet(workbook, newWorksheet, sheetName);
+            });
+            
+            // ... (сохранение файла остается таким же) ...
+        });
         // Функция для загрузки шаблона
         async function loadTemplate() {
             const loadingElement = document.getElementById('loading');
