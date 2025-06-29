@@ -35,21 +35,19 @@ const SIMPLIFIED_NAMES = {
 };
 
 document.addEventListener('DOMContentLoaded', function() {
-    const today = new Date();
-    document.getElementById('inventoryDate').value = today.toISOString().split('T')[0];
-    loadTemplate();
-    
+    // Инициализация
     const routeSelect = document.getElementById('routeNumber');
-    const carNumberInput = document.getElementById('carNumber');
     
-    // Автозаполнение номера машины
+    // Один обработчик на изменение маршрута
     routeSelect.addEventListener('change', function() {
-        carNumberInput.value = ROUTE_TO_CAR_MAPPING[this.value] || '';
+        if (this.value) {
+            this.classList.remove('error');
+            document.getElementById('routeNumberError').style.display = 'none';
+        }
+        document.getElementById('carNumber').value = ROUTE_TO_CAR_MAPPING[this.value] || '';
     });
-    
-    document.getElementById('downloadBtn').addEventListener('click', downloadInventoryWithExcelJS);
-    document.getElementById('routeNumberError').style.display = 'none';
 });
+
 
 document.getElementById('routeNumber').addEventListener('change', function() {
     if (this.value) {
@@ -144,7 +142,6 @@ async function downloadInventoryWithExcelJS() {
     if (!routeSelect.value) {
         routeSelect.classList.add('error');
         document.getElementById('routeNumberError').style.display = 'block';
-        isValid = false;
     }
     
     // Проверка номера машины
