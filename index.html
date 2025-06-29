@@ -70,7 +70,7 @@
     </style>
 </head>
 <body>
-   <h1>Инвентаризация кофе склада</h1>
+    <h1>Инвентаризация кофе склада</h1>
     
     <div class="form-group">
         <label for="date">Дата инвентаризации:</label>
@@ -101,7 +101,7 @@
             </tr>
         </thead>
         <tbody id="inventoryBody">
-            <!-- Товары будут добавлены после загрузки шаблона -->
+            <!-- Товары будут добавлены через JavaScript -->
         </tbody>
     </table>
     
@@ -112,64 +112,135 @@
     <button id="generateBtn">Скачать заполненный файл</button>
 
     <script>
-        // Функция для загрузки и обработки шаблона
-        async function processTemplate() {
-            try {
-                // 1. Получаем шаблон с сервера
-                const response = await fetch('/eovend/templates/invent.xlsx');
-                const arrayBuffer = await response.arrayBuffer();
-                
-                // 2. Открываем шаблон в Excel
-                await Excel.run(async (context) => {
-                    // Загружаем шаблон в рабочую книгу
-                    const workbook = context.workbook;
-                    workbook.load("worksheets/items/name");
-                    
-                    // 3. Получаем данные из формы
-                    const date = document.getElementById('date').value;
-                    const route = document.getElementById('route').value;
-                    const carNumber = document.getElementById('carNumber').value;
-                    const dateObj = new Date(date);
-                    
-                    // 4. Обновляем дату в шаблоне (ячейка A4 на каждом листе)
-                    const sheetNames = workbook.worksheets.items.map(sheet => sheet.name);
-                    for (const sheetName of sheetNames) {
-                        const sheet = workbook.worksheets.getItem(sheetName);
-                        const dateCell = sheet.getRange("A4");
-                        dateCell.values = [[`"___${dateObj.getDate()}___" ${getMonthName(dateObj)} ${dateObj.getFullYear()} г.`]];
-                    }
-                    
-                    // 5. Обновляем количества (на первом листе)
-                    const mainSheet = workbook.worksheets.getItem("ведомость д-бух");
-                    const quantities = document.querySelectorAll('.quantity');
-                    
-                    for (let i = 0; i < quantities.length; i++) {
-                        const row = i + 6; // Начинаем с 6 строки
-                        const range = mainSheet.getRange(`E${row}`);
-                        range.values = [[quantities[i].value || ""]];
-                    }
-                    
-                    // 6. Сохраняем с новым именем
-                    const fileName = `Инвентаризация ${getMonthName(dateObj)} ${dateObj.getFullYear()} кофе К${route} ${carNumber}.xlsx`;
-                    workbook.saveAs(fileName);
-                });
-            } catch (error) {
-                console.error("Error:", error);
-                OfficeHelpers.UI.notify(error);
-                OfficeHelpers.Utilities.log(error);
-            }
+        // Товары из шаблона
+        const products = [
+            { id: 1, code: "УТ-00002486", name: "Вода Нила Спрингс 19л", unit: "шт" },
+            { id: 2, code: "УТ-00001042", name: "Горячий шоколад ARISTOCRAT ШВЕЙЦАРСКИЙ гранулы 500г", unit: "шт" },
+            { id: 3, code: "УТ-00001045", name: "Капучино ARISTOCRAT Mokka Toffee 1000г", unit: "шт" },
+            { id: 4, code: "УТ-00001052", name: "Капучино TORINO Irish Cream 1кг", unit: "шт" },
+            { id: 5, code: "УТ-00002368", name: "Кофе Poetti Espresso Bravo 1кг зерно", unit: "шт" },
+            { id: 6, code: "УТ-00012749", name: "Кофе Жардин Пьяцца Арабика 1кг зерно", unit: "шт" },
+            { id: 7, code: "УТ-00001048", name: "Крышка пластиковая 80мм без клапана Global Cups", unit: "шт" },
+            { id: 8, code: "УТ-00001981", name: "Палочки размешиватели GlobalCups 105 мм", unit: "шт" },
+            { id: 9, code: "УТ-00001200", name: "Сладкий сахар в пакетах 1кг", unit: "шт" },
+            { id: 10, code: "УТ-00001980", name: "Стакан бумажный GlobalCups D70 150мл 100шт/уп", unit: "шт" },
+            { id: 11, code: "УТ-00001259", name: "Стакан бумажный Формация WAKE ME CUP D80 300мл 50шт/уп", unit: "шт" },
+            { id: 12, code: "УТ-00001043", name: "Сухое молоко гранул. \"AlpenMilch Плюс\" 1000г", unit: "шт" },
+            { id: 13, code: "УТ-00002543", name: "Сухое молоко МАЛИНА 1000г", unit: "шт" },
+            { id: 14, code: "УТ-00012756", name: "Смесь сухая ARISTOCRAT Цитрус 1кг", unit: "шт" },
+            { id: 15, code: "УТ-00012600", name: "Кофе Live Coffee (Санта Ричи) зерно", unit: "шт" },
+            { id: 16, code: "УТ-00012757", name: "Смесь сухая ARISTOCRAT Клубника 1кг", unit: "шт" }
+        ];
+
+        // Функция для получения названия месяца
+        function getMonthName(date) {
+            const months = [
+                "января", "февраля", "марта", "апреля", "мая", "июня",
+                "июля", "августа", "сентября", "октября", "ноября", "декабря"
+            ];
+            return months[date.getMonth()];
         }
 
-        // Инициализация OfficeJS
-        Office.onReady(() => {
+        // Инициализация приложения
+        Office.onReady((info) => {
+            // Установка текущей даты по умолчанию
+            const today = new Date();
+            document.getElementById('date').valueAsDate = today;
+            
+            // Заполняем таблицу товарами
+            const tableBody = document.getElementById('inventoryBody');
+            products.forEach(product => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${product.id}</td>
+                    <td>${product.code}</td>
+                    <td>${product.name}</td>
+                    <td>${product.unit}</td>
+                    <td><input type="number" min="0" class="quantity" data-id="${product.id}"></td>
+                `;
+                tableBody.appendChild(row);
+            });
+
+            // Обработчик кнопки
             document.getElementById('generateBtn').addEventListener('click', processTemplate);
         });
 
-        // Вспомогательная функция для названия месяца
-        function getMonthName(date) {
-            const months = ["января", "февраля", "марта", "апреля", "мая", "июня",
-                          "июля", "августа", "сентября", "октября", "ноября", "декабря"];
-            return months[date.getMonth()];
+        // Основная функция обработки
+        async function processTemplate() {
+            const loadingElement = document.getElementById('loading');
+            loadingElement.style.display = 'block';
+            
+            try {
+                // Проверка данных формы
+                const date = document.getElementById('date').value;
+                const route = document.getElementById('route').value;
+                const carNumber = document.getElementById('carNumber').value;
+                
+                if (!date || !route || !carNumber) {
+                    alert("Заполните все обязательные поля");
+                    return;
+                }
+
+                // Создаем новую книгу Excel
+                await Excel.run(async (context) => {
+                    const workbook = context.workbook;
+                    
+                    // Добавляем листы как в шаблоне
+                    const sheet1 = workbook.worksheets.add("ведомость д-бух");
+                    const sheet2 = workbook.worksheets.add("Для печати");
+                    
+                    // Заполняем первый лист
+                    fillInventorySheet(sheet1, date, "Остатки осн склада факт шт");
+                    
+                    // Заполняем второй лист
+                    fillInventorySheet(sheet2, date, "Остатки склада факт шт");
+                    
+                    // Сохраняем файл
+                    const dateObj = new Date(date);
+                    const fileName = `Инвентаризация ${getMonthName(dateObj)} ${dateObj.getFullYear()} кофе К${route} ${carNumber}.xlsx`;
+                    workbook.saveAs(fileName);
+                });
+                
+            } catch (error) {
+                console.error("Error:", error);
+                alert("Произошла ошибка: " + error.message);
+            } finally {
+                loadingElement.style.display = 'none';
+            }
+        }
+
+        // Функция для заполнения листа инвентаризации
+        function fillInventorySheet(sheet, date, quantityHeader) {
+            const dateObj = new Date(date);
+            
+            // Заполняем шапку
+            sheet.getRange("A1:G1").values = [["", "", "Инвентаризационная ведомость кофе склада", "", "", "", ""]];
+            sheet.getRange("A3").values = [[`"___${dateObj.getDate()}___" ${getMonthName(dateObj)} ${dateObj.getFullYear()} г.`]];
+            sheet.getRange("A5:G5").values = [[
+                "№ п/п", "Код", "Номенклатура", "Ед. изм.", 
+                quantityHeader, "1с, 31.05.2025", "Сверка"
+            ]];
+            
+            // Заполняем данные товаров
+            for (let i = 0; i < products.length; i++) {
+                const row = 6 + i;
+                const product = products[i];
+                const quantityInput = document.querySelector(`.quantity[data-id="${product.id}"]`);
+                
+                sheet.getRange(`A${row}:G${row}`).values = [[
+                    product.id,
+                    product.code,
+                    product.name,
+                    product.unit,
+                    quantityInput.value || "",
+                    "",
+                    `=EXACT(F${row},E${row})`
+                ]];
+            }
+            
+            // Форматирование
+            sheet.getRange("A5:G5").format.font.bold = true;
+            sheet.getUsedRange().format.autofitColumns();
         }
     </script>
 </body>
