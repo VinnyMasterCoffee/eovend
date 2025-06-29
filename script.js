@@ -28,6 +28,15 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('downloadBtn').addEventListener('click', downloadInventoryWithExcelJS);
 });
 
+document.getElementById('routeNumber').addEventListener('change', function() {
+    if (this.value) {
+        this.classList.remove('error');
+        document.getElementById('routeNumberError').style.display = 'none';
+    }
+    // Автозаполнение номера машины
+    document.getElementById('carNumber').value = ROUTE_TO_CAR_MAPPING[this.value] || '';
+});
+
 const NON_EDITABLE_ITEMS = [
     "Кофе Poetti Espresso Bravo 1кг зерно",
     "Палочки размешиватели GlobalCups 105 мм",
@@ -115,18 +124,41 @@ async function loadTemplate() {
 
 async function downloadInventoryWithExcelJS() {
     const dateInput = document.getElementById('inventoryDate');
-    const routeNumber = document.getElementById('routeNumber').value; // получаем значение select
-    const carNumber = document.getElementById('carNumber').value;
+    const routeSelect = document.getElementById('routeNumber');
+    const carNumberInput = document.getElementById('carNumber');
     
-    // Проверка заполнения полей
-    if (!dateInput.value || !routeNumber) {
-        alert('Пожалуйста, заполните все обязательные поля');
-        return;
+    // Сбрасываем предыдущие ошибки
+    document.querySelectorAll('.error').forEach(el => el.classList.remove('error'));
+    document.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
+    
+    let isValid = true;
+    
+    // Проверка даты
+    if (!dateInput.value) {
+        dateInput.classList.add('error');
+        isValid = false;
     }
     
-    // Дополнительная проверка номера машины
-    if (!carNumber) {
-        alert('Ошибка: не удалось определить номер машины. Пожалуйста, выберите маршрут еще раз');
+    // Проверка маршрута
+    if (!routeSelect.value) {
+        routeSelect.classList.add('error');
+        document.getElementById('routeNumberError').style.display = 'block';
+        isValid = false;
+    }
+    
+    // Проверка номера машины
+    if (!carNumberInput.value) {
+        carNumberInput.classList.add('error');
+        isValid = false;
+    }
+    
+    if (!isValid) {
+        // Прокручиваем к первой ошибке
+        const firstError = document.querySelector('.error');
+        if (firstError) {
+            firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            firstError.focus();
+        }
         return;
     }
     
