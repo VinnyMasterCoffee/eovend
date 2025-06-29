@@ -58,15 +58,7 @@ async function loadTemplate() {
             
             const tr = document.createElement('tr');
             
-            // Скрытые столбцы (№ п/п, Код, Ед. изм.)
-            ['0', '1', '3'].forEach(col => {
-                const td = document.createElement('td');
-                td.className = 'hidden-column';
-                td.textContent = row[col] || '';
-                tr.appendChild(td);
-            });
-            
-            // Столбец с названием (упрощенным, если есть)
+            // Название товара (упрощенное)
             const nameTd = document.createElement('td');
             nameTd.textContent = simplifiedName;
             tr.appendChild(nameTd);
@@ -77,12 +69,12 @@ async function loadTemplate() {
             input.type = 'number';
             input.min = '0';
             input.dataset.rowIndex = i - headerRow - 1;
+            input.dataset.originalName = row[2]; // Сохраняем оригинальное название
             
             if (!isEditable) {
                 input.readOnly = true;
                 input.placeholder = 'Не редактируется';
-                input.style.backgroundColor = '#f0f0f0';
-                input.style.cursor = 'not-allowed';
+                input.classList.add('non-editable');
             }
             
             tdInput.appendChild(input);
@@ -97,7 +89,6 @@ async function loadTemplate() {
     }
 }
 
-// Остальной код (downloadInventoryWithExcelJS и findDateCell) остается без изменений
 async function downloadInventoryWithExcelJS() {
     const dateInput = document.getElementById('inventoryDate');
     const routeNumber = document.getElementById('routeNumber').value;
@@ -126,7 +117,7 @@ async function downloadInventoryWithExcelJS() {
                 dateCell.value = `"___${date.getDate()}___" ${monthNames[date.getMonth()]} ${date.getFullYear()} г.`;
             }
             
-            const inputs = document.querySelectorAll('#inventoryItems input:not([readonly])');
+            const inputs = document.querySelectorAll('#inventoryItems input');
             inputs.forEach((input, index) => {
                 const row = 6 + index;
                 
