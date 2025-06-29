@@ -6,11 +6,110 @@
     <title>Инвентаризация кофе</title>
     <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
     <style>
-        /* Ваши стили остаются без изменений */
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .error {
+            color: red;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        .loading {
+            display: none;
+            margin-top: 20px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
-    <!-- Ваша HTML-форма остается без изменений -->
+   <h1>Инвентаризация кофе склада</h1>
+    
+    <div class="form-group">
+        <label for="date">Дата инвентаризации:</label>
+        <input type="date" id="date" name="date">
+    </div>
+    
+    <div class="form-group">
+        <label for="route">Номер маршрута (1-8):</label>
+        <input type="number" id="route" name="route" min="1" max="8">
+        <div id="routeError" class="error"></div>
+    </div>
+    
+    <div class="form-group">
+        <label for="carNumber">Номер машины (формат: А123БВ45):</label>
+        <input type="text" id="carNumber" name="carNumber" pattern="[А-Я]{1}\d{3}[А-Я]{2}\d{2}">
+        <div id="carNumberError" class="error"></div>
+    </div>
+    
+    <h2>Остатки товаров</h2>
+    <table id="inventoryTable">
+        <thead>
+            <tr>
+                <th>№ п/п</th>
+                <th>Код</th>
+                <th>Номенклатура</th>
+                <th>Ед. изм.</th>
+                <th>Остатки склада факт (шт)</th>
+            </tr>
+        </thead>
+        <tbody id="inventoryBody">
+            <!-- Товары будут добавлены после загрузки шаблона -->
+        </tbody>
+    </table>
+    
+    <div class="loading" id="loading">
+        Загрузка шаблона...
+    </div>
+    
+    <button id="generateBtn">Скачать заполненный файл</button>
 
     <script>
         // Функция для загрузки и обработки шаблона
