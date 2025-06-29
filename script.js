@@ -35,8 +35,12 @@ const SIMPLIFIED_NAMES = {
 };
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Инициализация
+    const today = new Date();
+    document.getElementById('inventoryDate').value = today.toISOString().split('T')[0];
+    loadTemplate();
+    
     const routeSelect = document.getElementById('routeNumber');
+    const carNumberInput = document.getElementById('carNumber');
     
     // Один обработчик на изменение маршрута
     routeSelect.addEventListener('change', function() {
@@ -44,19 +48,21 @@ document.addEventListener('DOMContentLoaded', function() {
             this.classList.remove('error');
             document.getElementById('routeNumberError').style.display = 'none';
         }
-        document.getElementById('carNumber').value = ROUTE_TO_CAR_MAPPING[this.value] || '';
+        carNumberInput.value = ROUTE_TO_CAR_MAPPING[this.value] || '';
     });
+    
+    document.getElementById('downloadBtn').addEventListener('click', downloadInventoryWithExcelJS);
 });
 
 
-document.getElementById('routeNumber').addEventListener('change', function() {
+/*document.getElementById('routeNumber').addEventListener('change', function() {
     if (this.value) {
         this.classList.remove('error');
         document.getElementById('routeNumberError').style.display = 'none';
     }
     // Автозаполнение номера машины
     document.getElementById('carNumber').value = ROUTE_TO_CAR_MAPPING[this.value] || '';
-});
+});*/
 
 // Функция для нормализации строк (удаление лишних пробелов)
 function normalizeString(str) {
