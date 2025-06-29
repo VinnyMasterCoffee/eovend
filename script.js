@@ -230,6 +230,12 @@ async function downloadInventoryWithExcelJS() {
         const date = new Date(dateInput.value);
         const monthNames = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь',
                           'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'];
+        
+        // Получаем ЗНАЧЕНИЯ элементов, а не сами элементы
+        const routeNumber = routeSelect.value;
+        const carNumber = carNumberInput.value;
+        
+        // Формируем корректное имя файла
         const fileName = `Инвентаризация ${monthNames[date.getMonth()]} ${date.getFullYear()} кофе К${routeNumber} ${carNumber}.xlsx`;
         
         const buffer = await workbook.xlsx.writeBuffer();
