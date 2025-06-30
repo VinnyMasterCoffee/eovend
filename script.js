@@ -238,26 +238,31 @@ async function downloadInventoryWithExcelJS() {
             factCell.value = value;
             
             const excelRow = excelRows.find(row => normalizeString(row.name) === originalName);
-                if (excelRow) {
-                    const row = excelRow.rowNumber;
-                    
-                    const factCell = worksheet.getCell(`E${row}`);
-                    factCell.value = input.value ? parseInt(input.value) : null;
-                    
-                    const checkCell = worksheet.getCell(`G${row}`);
-                    checkCell.value = { formula: `EXACT(F${row},E${row})`, result: false };
-                    
-                    ['A', 'B', 'C', 'D', 'E', 'F', 'G'].forEach(col => {
-                        const cell = worksheet.getCell(`${col}${row}`);
-                        cell.border = {
-                            top: {style: 'thin'},
-                            left: {style: 'thin'},
-                            bottom: {style: 'thin'},
-                            right: {style: 'thin'}
-                        };
-                    });
-                }
+            if (excelRow) {
+                const row = excelRow.rowNumber;
+                let value = input.value ? parseInt(input.value) : null;
+    
+            // Применяем множитель для специальных товаров
+            if (MULTIPLIERS[originalName] && value !== null) {
+                value *= MULTIPLIERS[originalName];
+            }
+    
+            const factCell = worksheet.getCell(`E${row}`);
+            factCell.value = value;
+    
+            const checkCell = worksheet.getCell(`G${row}`);
+            checkCell.value = { formula: `EXACT(F${row},E${row})`, result: false };
+    
+                ['A', 'B', 'C', 'D', 'E', 'F', 'G'].forEach(col => {
+                const cell = worksheet.getCell(`${col}${row}`);
+                cell.border = {
+                    top: {style: 'thin'},
+                    left: {style: 'thin'},
+                    bottom: {style: 'thin'},
+                    right: {style: 'thin'}
+                };
             });
+            }
         }
         
         const date = new Date(dateInput.value);
