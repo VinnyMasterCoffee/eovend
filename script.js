@@ -1,6 +1,11 @@
 const EXCEL_TEMPLATE_PATH = 'https://eovendcoffee.github.io/invent/templates/invent.xlsx';
 const DEBUG_MODE = true; // Поставьте true, если нужно включить логирование
 
+const MULTIPLIERS = {
+    "Стакан бумажный Формация WAKE ME CUP D80 300мл 50шт/уп": 40,
+    "Крышка пластиковая 80мм без клапана Global Cups": 100
+};
+
 const ROUTE_TO_CAR_MAPPING = {
     "1": "У840УЕ33",
     "2": "У179УК33",
@@ -26,9 +31,9 @@ const SIMPLIFIED_NAMES = {
     "Капучино ARISTOCRAT Mokka Toffee 1000г": "Toffee",
     "Капучино TORINO Irish Cream 1кг": "Irish",
     "Кофе Жардин Пьяцца Арабика 1кг зерно": "Кофе Jardin",
-    "Крышка пластиковая 80мм без клапана Global Cups": "Крышки",
+    "Крышка пластиковая 80мм без клапана Global Cups": "Крышки (упаковка = 100 шт)",
     "Сладкий сахар в пакетах 1кг": "Сахар",
-    "Стакан бумажный Формация WAKE ME CUP D80 300мл 50шт/уп": "Стаканы",
+    "Стакан бумажный Формация WAKE ME CUP D80 300мл 50шт/уп": "Стаканы (упаковка = 40 шт)",
     "Сухое молоко гранул. \"AlpenMilch Плюс\" 1000г": "Молоко",
     "Сухое молоко МАЛИНА 1000г": "Малина",
     "Смесь сухая ARISTOCRAT Цитрус 1кг": "Цитрус"
@@ -214,16 +219,24 @@ async function downloadInventoryWithExcelJS() {
                 });
                 rowIndex++;
             }
+
             const inputs = document.querySelectorAll('#inventoryItems input');
             inputs.forEach((input) => {
                 const originalName = input.dataset.originalName;
-                if (DEBUG_MODE) {
-                    console.log("Searching for:", originalName);
-                    excelRows.forEach(row => {
-                        console.log("Excel row name:", row.name, "Normalized:", normalizeString(row.name));
-                    });
-                }
+                const excelRow = excelRows.find(row => normalizeString(row.name) === originalName);
         
+                if (excelRow) {
+                    const row = excelRow.rowNumber;
+                    let value = input.value ? parseInt(input.value) : null;
+            
+                // Применяем множитель, если товар в списке
+                if (MULTIPLIERS[originalName] && value !== null) {
+                    value *= MULTIPLIERS[originalName];
+                }
+            
+            const factCell = worksheet.getCell(`E${row}`);
+            factCell.value = value;
+            
             const excelRow = excelRows.find(row => normalizeString(row.name) === originalName);
                 if (excelRow) {
                     const row = excelRow.rowNumber;
