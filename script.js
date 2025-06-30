@@ -168,7 +168,7 @@ async function downloadInventoryWithExcelJS() {
         routeSelect.classList.add('error');
         const errorElement = document.getElementById('routeNumberError');
         errorElement.style.display = 'block';
-        errorElement.style.opacity = '1'; // Добавляем для гарантии отображения
+        errorElement.style.opacity = '1';
         isValid = false;
     }
     
@@ -179,7 +179,6 @@ async function downloadInventoryWithExcelJS() {
     }
     
     if (!isValid) {
-        // Прокручиваем к первой ошибке
         const firstError = document.querySelector('.error');
         if (firstError) {
             firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -206,9 +205,9 @@ async function downloadInventoryWithExcelJS() {
                 dateCell.value = `"___${date.getDate()}___" ${monthNames[date.getMonth()]} ${date.getFullYear()} г.`;
             }
             
-            // Получаем все строки из Excel, чтобы найти соответствия
+            // Получаем все строки из Excel
             const excelRows = [];
-            let rowIndex = 6; // Начальная строка с данными
+            let rowIndex = 6;
             while (true) {
                 const nameCell = worksheet.getCell(`C${rowIndex}`);
                 if (!nameCell.value) break;
@@ -224,56 +223,42 @@ async function downloadInventoryWithExcelJS() {
             inputs.forEach((input) => {
                 const originalName = input.dataset.originalName;
                 const excelRow = excelRows.find(row => normalizeString(row.name) === originalName);
-        
+                
                 if (excelRow) {
                     const row = excelRow.rowNumber;
                     let value = input.value ? parseInt(input.value) : null;
-            
-                // Применяем множитель, если товар в списке
-                if (MULTIPLIERS[originalName] && value !== null) {
-                    value *= MULTIPLIERS[originalName];
+                    
+                    // Применяем множитель для специальных товаров
+                    if (MULTIPLIERS[originalName] && value !== null) {
+                        value *= MULTIPLIERS[originalName];
+                    }
+                    
+                    const factCell = worksheet.getCell(`E${row}`);
+                    factCell.value = value;
+                    
+                    const checkCell = worksheet.getCell(`G${row}`);
+                    checkCell.value = { formula: `EXACT(F${row},E${row})`, result: false };
+                    
+                    ['A', 'B', 'C', 'D', 'E', 'F', 'G'].forEach(col => {
+                        const cell = worksheet.getCell(`${col}${row}`);
+                        cell.border = {
+                            top: {style: 'thin'},
+                            left: {style: 'thin'},
+                            bottom: {style: 'thin'},
+                            right: {style: 'thin'}
+                        };
+                    });
                 }
-            
-            const factCell = worksheet.getCell(`E${row}`);
-            factCell.value = value;
-            
-            const excelRow = excelRows.find(row => normalizeString(row.name) === originalName);
-            if (excelRow) {
-                const row = excelRow.rowNumber;
-                let value = input.value ? parseInt(input.value) : null;
-    
-            // Применяем множитель для специальных товаров
-            if (MULTIPLIERS[originalName] && value !== null) {
-                value *= MULTIPLIERS[originalName];
-            }
-    
-            const factCell = worksheet.getCell(`E${row}`);
-            factCell.value = value;
-    
-            const checkCell = worksheet.getCell(`G${row}`);
-            checkCell.value = { formula: `EXACT(F${row},E${row})`, result: false };
-    
-                ['A', 'B', 'C', 'D', 'E', 'F', 'G'].forEach(col => {
-                const cell = worksheet.getCell(`${col}${row}`);
-                cell.border = {
-                    top: {style: 'thin'},
-                    left: {style: 'thin'},
-                    bottom: {style: 'thin'},
-                    right: {style: 'thin'}
-                };
             });
-            }
         }
         
         const date = new Date(dateInput.value);
         const monthNames = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь',
                           'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'];
         
-        // Получаем ЗНАЧЕНИЯ элементов, а не сами элементы
         const routeNumber = routeSelect.value;
         const carNumber = carNumberInput.value;
         
-        // Формируем корректное имя файла
         const fileName = `Инвентаризация ${monthNames[date.getMonth()]} ${date.getFullYear()} кофе К${routeNumber} ${carNumber}.xlsx`;
         
         const buffer = await workbook.xlsx.writeBuffer();
